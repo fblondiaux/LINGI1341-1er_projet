@@ -1,0 +1,217 @@
+#include "record.h"
+#include "stdlib.h" 
+#include "string.h" 
+#include <stdio.h>
+#include <arpa/inet.h>
+
+
+int record_init(struct record *r)
+{
+	if (r == NULL)
+		return 1;
+
+	r->header_type = 0;
+	r->header_f = 0;
+	r->header_length = 0;
+	r->payload = NULL;
+	return 0;
+}
+
+void record_free(struct record *r)
+{
+	if(r->payload != NULL)
+	{
+		free(r->payload);
+	}
+}
+
+
+int record_get_type(const struct record *r)
+{
+	return r->header_type;
+}
+
+void record_set_type(struct record *r, int type)
+{
+	r->header_type = (type & 0xFFFF);
+}
+
+int record_get_length(const struct record *r)
+{
+	return r->header_length;
+}
+
+int record_set_payload(struct record *r, const char * buf, int n)
+{
+	if (r== NULL)
+		return -1;
+
+	if( r->payload != NULL)
+	{
+		free(r->payload);
+		r->payload = NULL;
+		r->header_length = 0;
+	}
+
+	if (buf == NULL || n==0)
+	{
+		// free(r->payload);
+		//r->payload = NULL;
+		//r->header_length = 0;
+		return 0;
+	}
+	else
+	{
+		r->payload = (char *) malloc((n & 0xFFFF)*sizeof(char*));
+		if (r->payload == NULL)
+			return -1;
+
+		memcpy((void *)r->payload, (void *) buf, (size_t) (n & 0xFFFF));
+		r->header_length = (n & 0xFFFF);
+	}
+	return 0;
+
+}
+
+int record_get_payload(const struct record *r, char *buf, int n)
+{
+	if (r==NULL || buf==NULL || ((n & 0xFFFF)<=0))
+	{
+		return 0;
+	}
+	if( (n & 0xFFFF) >= r->header_length)
+	{
+		memcpy((void *) buf, (void *)r->payload, (size_t) r->header_length);
+
+		return (r->header_length);
+	}
+	else
+	{
+		memcpy((void *) buf, (void *)r->payload, (size_t) (n & 0xFFFF));
+
+		return (n & 0xFFFF);
+	}
+	return 0;
+}
+
+int record_has_footer(const struct record *r)
+{
+	return r->header_f;
+}
+
+void record_delete_footer(struct record *r)
+{
+	r->footer = 0;
+	r->header_f = 0;
+}
+
+void record_set_uuid(struct record *r, unsigned int uuid)
+{
+	if( uuid != 0)
+	{
+		r->footer = uuid;
+		r->header_f = 1;
+	}
+}
+
+unsigned int record_get_uuid(const struct record *r)
+{
+	if( record_has_footer(r))
+		return (r->footer);
+	else
+	{
+		return 0; /* 0 is an invalid UUID */
+	}
+}
+
+int record_write(const struct record *r, FILE *f)
+{
+
+	if(r == NULL || f == NULL)
+		return -1;
+	
+	int count = 0; // nombre d'octets ecrits dans fichier
+	size_t err = 0; // verifie bon fonctionnement fwrite
+
+	struct record rec;
+	rec.header_type = r->header_type;
+	rec.header_f = r->header_f;
+	rec.header_length = htons(r->header_length);
+	rec.payload = r->payload; 
+
+	if(record_has_footer(r)==1)
+		rec.payload = r->payload;
+
+	err = fwrite((const void*) &rec, 4, 1, f);
+	if (err!=1)
+		return -1;
+	count = count+4;
+
+	int length = record_get_length(r);
+	if (length != 0)
+	{
+		err = fwrite((const void*) r->payload, 1, length, f);
+		if(err!=(size_t) length)
+			return -1;
+		count = count+length;
+	}
+	
+
+	if(record_has_footer(r)==1)
+	{
+		int uuid = record_get_uuid(r); // peut-on mettre un uint32_t?
+		err = fwrite(&uuid, 1, 4, f);
+		if(err!=4)
+			return -1;
+		count = count+4;
+	}
+	return count;
+}
+
+int record_read(struct record *r, FILE *f)
+{
+	int count = 0;
+	size_t err = 0;
+
+	err = fread(r, 2, 1, f);
+	if(err!=1)
+		return -1;
+	count = count+2;
+
+	unsigned int length_net;
+	err = fread(&length_net, 2, 1, f);
+	if (err!=1)
+		return -1;
+	count = count+2;
+
+
+	unsigned int header_length = ntohs(length_net);
+	r->header_length = header_length;
+
+	if(header_length != 0)
+	{
+		char *payload = (char *) malloc(sizeof(char)*header_length);
+		if(payload == NULL)
+			return -1;
+
+		err = fread(payload, 1, header_length, f);
+		if(err != header_length)
+			return -1;
+		r->payload = payload;
+		count = count+header_length;
+	}
+
+	
+
+	if(r->header_f == 1)
+	{
+		uint32_t footer;
+		err = fread(&footer, 4, 1, f);
+		if(err!=1)
+			return -1;
+		r->footer = footer;
+		count = count+4;
+	}
+	return count;
+
+}
