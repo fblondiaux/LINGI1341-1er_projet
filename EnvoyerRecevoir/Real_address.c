@@ -7,13 +7,13 @@
 // Ce code est inspire de la resource https://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
 
 /* Resolve the resource name to an usable IPv6 address
- * @address: The name to resolve
- * @rval: Where the resulting IPv6 address descriptor should be stored
- * @return: NULL if it succeeded, or a pointer towards
- *          a string describing the error if any.
- *          (const char* means the caller cannot modify or free the return value,
- *           so do not use malloc!)
- */
+* @address: The name to resolve
+* @rval: Where the resulting IPv6 address descriptor should be stored
+* @return: NULL if it succeeded, or a pointer towards
+*          a string describing the error if any.
+*          (const char* means the caller cannot modify or free the return value,
+*           so do not use malloc!)
+*/
 const char * real_address(const char *address, struct sockaddr_in6 *rval){
 
   int status;
@@ -26,7 +26,7 @@ const char * real_address(const char *address, struct sockaddr_in6 *rval){
   hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
 
   if ((status = getaddrinfo(address, NULL , &hints, &servinfo)) != 0) {
-      return gai_strerror(status);
+    return gai_strerror(status);
   }
 
   rval = (struct sockaddr_in6 *) servinfo->ai_addr;
