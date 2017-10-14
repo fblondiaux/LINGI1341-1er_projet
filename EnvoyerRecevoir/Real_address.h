@@ -1,8 +1,12 @@
 #ifndef __REAL_ADDRESS_H_
 #define __REAL_ADDRESS_H_
 
+
 #include <netinet/in.h> /* * sockaddr_in6 */
 #include <sys/types.h> /* sockaddr_in6 */
+#include <sys/socket.h>
+#include <netdb.h>
+#include <string.h>
 
 /* Resolve the resource name to an usable IPv6 address
  * @address: The name to resolve
