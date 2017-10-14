@@ -30,6 +30,7 @@ const char * real_address(const char *address, struct sockaddr_in6 *rval){
   }
 
   rval = (struct sockaddr_in6 *) servinfo->ai_addr;
+    fprintf(stderr,"realvalue %d", rval->sin6_family);  // Present juste pour que ça compile, il faut trouver une meilleure solution
 
   // freeaddrinfo(servinfo); // JE NE SAIS PAS SI ÇA DOIT ETRE LA OU PAS
   // SI ON FREE SERVINFO ALORS ON FREE AUSSI RVAL ? Faut-il utiliser meme copy ?
