@@ -4,6 +4,8 @@
 #include <netdb.h>
 #include <string.h>
 
+// Ce code est inspire de la resource https://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
+
 /* Resolve the resource name to an usable IPv6 address
  * @address: The name to resolve
  * @rval: Where the resulting IPv6 address descriptor should be stored
@@ -28,6 +30,7 @@ const char * real_address(const char *address, struct sockaddr_in6 *rval){
   }
 
   rval = (struct sockaddr_in6 *) servinfo->ai_addr;
+
   // freeaddrinfo(servinfo); // JE NE SAIS PAS SI ÇA DOIT ETRE LA OU PAS
   // SI ON FREE SERVINFO ALORS ON FREE AUSSI RVAL ? Faut-il utiliser meme copy ?
   return NULL;
