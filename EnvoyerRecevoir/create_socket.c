@@ -22,8 +22,7 @@ int create_socket(struct sockaddr_in6 *source_addr,int src_port,struct sockaddr_
     fprintf(stderr, "Erreur lors de l'utilisation de socket\n");
     return -1;
   }
-
-  if(dest_addr == NULL){
+  if(source_addr != NULL){
     source_addr->sin6_port = htons(src_port);
     int err = bind(soc,(struct sockaddr *) source_addr, sizeof(struct sockaddr_in6));
     if(err == -1){
@@ -31,7 +30,7 @@ int create_socket(struct sockaddr_in6 *source_addr,int src_port,struct sockaddr_
       return -1;
     }
   }
-  else{
+  if(dest_addr != NULL){
     dest_addr->sin6_port = htons(dst_port);
     if(connect(soc,(struct sockaddr *)dest_addr, sizeof(struct sockaddr_in6)) == -1){
       fprintf(stderr, "Erreur lors de l'utilisation de connect\n");

@@ -26,6 +26,7 @@ int wait_for_client(int sfd){
   }
   struct sockaddr_in6* theiraddress = malloc(sizeof( struct sockaddr_in6));
   if(theiraddress == NULL){
+      fprintf(stderr, "CHerchons la segfalt8\n");
     free(buf);
     return -1;
   }
