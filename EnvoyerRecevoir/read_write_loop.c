@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-
+#include "read_write_loop.h"
 /* Loop reading a socket and printing to stdout,
 * while reading stdin and writing to the socket
 * @sfd: The socket file descriptor. It is both bound and connected.
@@ -11,7 +11,6 @@
 */
 void read_write_loop(const int sfd){
   // COde issus du cours de Systeme informatique
-
   struct pollfd ufds[2];
   // Eventuellement checker si ça donne une erreur.
   ufds[0].fd = sfd;

@@ -1,3 +1,4 @@
+#include "wait_for_client.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,7 +29,7 @@ int wait_for_client(int sfd){
     free(buf);
     return -1;
   }
-  socklen_t theirlength = 0;
+  socklen_t theirlength = sizeof(struct sockaddr_in6);
   if(recvfrom(sfd, buf, MAXBUFLEN , 0, (struct sockaddr*) theiraddress, &theirlength) == -1){
     free(buf);
     free(theiraddress);
