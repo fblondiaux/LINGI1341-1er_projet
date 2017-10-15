@@ -1,48 +1,49 @@
-
+#include <sys/poll.h>
 /* Loop reading a socket and printing to stdout,
- * while reading stdin and writing to the socket
- * @sfd: The socket file descriptor. It is both bound and connected.
- * @return: as soon as stdin signals EOF
- */
+* while reading stdin and writing to the socket
+* @sfd: The socket file descriptor. It is both bound and connected.
+* @return: as soon as stdin signals EOF
+*/
 void read_write_loop(const int sfd){
   // COde issus du cours de Systeme informatique
-  // En vrai il faut que j'approfondisse la fonction poll peut-etre pas besoin de processus :)
-  
 
-// COmment signaler si la fonction foire ?
+  struct pollfd ufds[2] = malloc(sizeof(struct pollfd)*2);
+  // Eventuellement checker si ça donne une erreur.
+  ufds[0].fd = sfd;
+  ufds[0].events = POLLIN; // check for normal or out-of-band
 
-  int status;
-  pid_t pid;
+  ufds[1].fd = sfd;
+  ufds[1].events = POLLOUT; // check for just normal data
+  int rv = poll(ufds, 2, 3500); // Si apres 3.5 secondes pas de data il plante.
 
-  pid=fork();
-
-  // if (pid==-1) {
-  //   // erreur à l'exécution de fork
-  //   perror("fork");
-  //   exit(EXIT_FAILURE);
-  // }
-  // pas d'erreur
-  if (pid==0) {
-    //Processus fils
-    // Lis les données
-    int err = recv(sfd, un moyen d'envoyer sur la sortie standantd )
+  if (rv == -1) {
+    //perror("poll"); // error occurred in poll()
+  }
+  else if (rv == 0) {
+    //printf("Timeout occurred!  No data after 3.5 seconds.\n");
   }
   else {
-    // processus père
-    int fils=waitpid(pid,&status,0);
-    if(fils==-1) {
-      perror("wait");
-      exit(EXIT_FAILURE);
-    }
-    if(WIFEXITED(status)) {
-      printf("Le fils %d s'est terminé correctement et a retourné la valeur %d\n",fils,WEXITSTATUS(status));
-      return(EXIT_SUCCESS);
-    }
-    else {
-      if( WIFSIGNALED(status)) {
-	printf("Le fils %d a été tué par le signal %d\n",fils,WTERMSIG(status));
+    // check for events on s1:
+    if (ufds[0].revents & POLLIN) {
+      char buf1[1024] = malloc(1024);
+      //Eventuellement verifier le malloc
+      int recu = recv(sfd, buf1, sizeof buf1, 0); // receive normal data
+      int ecrit = fwrite(buf1, 1, recu, stdout);
+      if(ecrit != recu){
+        fprintf(stderr, "Mauvaise ecriture sur stdout\n");
       }
-      return(EXIT_FAILURE);
+      free(buf1);
+    }
+    // check for events on s2:
+    if (ufds[1].revents & POLLOUT) {
+      char buf2[1024]=malloc(1024);
+      int lu = fread(buf2,1,1024,stdin);
+      int sended = send(sfd,buf2,lu,0);
+      if(sended != lu){
+        fprintf(stderr, "Erreur lors de l'envoie\n");
+      }
+      free(buf2);
     }
   }
+  free(ufds);
 }
