@@ -1,4 +1,9 @@
 #include <sys/poll.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
 /* Loop reading a socket and printing to stdout,
 * while reading stdin and writing to the socket
 * @sfd: The socket file descriptor. It is both bound and connected.
@@ -7,7 +12,7 @@
 void read_write_loop(const int sfd){
   // COde issus du cours de Systeme informatique
 
-  struct pollfd ufds[2] = malloc(sizeof(struct pollfd)*2);
+  struct pollfd ufds[2];
   // Eventuellement checker si ça donne une erreur.
   ufds[0].fd = sfd;
   ufds[0].events = POLLIN; // check for normal or out-of-band
@@ -25,25 +30,22 @@ void read_write_loop(const int sfd){
   else {
     // check for events on s1:
     if (ufds[0].revents & POLLIN) {
-      char buf1[1024] = malloc(1024);
+      char buf1[1024];
       //Eventuellement verifier le malloc
       int recu = recv(sfd, buf1, sizeof buf1, 0); // receive normal data
       int ecrit = fwrite(buf1, 1, recu, stdout);
       if(ecrit != recu){
         fprintf(stderr, "Mauvaise ecriture sur stdout\n");
       }
-      free(buf1);
     }
     // check for events on s2:
     if (ufds[1].revents & POLLOUT) {
-      char buf2[1024]=malloc(1024);
+      char buf2[1024];
       int lu = fread(buf2,1,1024,stdin);
       int sended = send(sfd,buf2,lu,0);
       if(sended != lu){
         fprintf(stderr, "Erreur lors de l'envoie\n");
       }
-      free(buf2);
     }
   }
-  free(ufds);
 }
