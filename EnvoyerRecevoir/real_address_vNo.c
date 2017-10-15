@@ -35,7 +35,7 @@ const char * real_address(const char *address, struct sockaddr_in6 *rval)
 	hints.ai_family = AF_INET6; // les adresses retournées doivent être de la famille IPv6
 	hints.ai_socktype = SOCK_DGRAM;	/* On choisit le type d'adresse de socket. 
 										 	les datagram sockets utilisent le "User datagram protocol (UDP)" 
-											et non le TCP */
+											et non le TCP  --> noté dans consigne Inginious qu'il faut UDP*/
 	hints.ai_protocol = IPPROTO_UDP; /* je crois qu'il ne faut pas le mettre car il existe normalement un seul type de protocol 
 	pour un type de socket et une famille de protocole donnés. On peut alors mettre zéro 
 	(source: http://man7.org/linux/man-pages/man2/socket.2.html ) */
