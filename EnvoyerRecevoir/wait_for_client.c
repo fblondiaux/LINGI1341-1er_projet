@@ -20,29 +20,17 @@
 
 #define MAXBUFLEN 1024
 int wait_for_client(int sfd){
-  char* buf = malloc(MAXBUFLEN);
-  if (buf == NULL) {
-    return -1;
-  }
-  struct sockaddr_in6* theiraddress = malloc(sizeof( struct sockaddr_in6));
-  if(theiraddress == NULL){
-      fprintf(stderr, "CHerchons la segfalt8\n");
-    free(buf);
-    return -1;
-  }
+  char buf[1024];
+  struct sockaddr_in6 theiraddress;
   socklen_t theirlength = sizeof(struct sockaddr_in6);
-  if(recvfrom(sfd, buf, MAXBUFLEN , 0, (struct sockaddr*) theiraddress, &theirlength) == -1){
-    free(buf);
-    free(theiraddress);
+  if(recvfrom(sfd, buf, MAXBUFLEN ,MSG_PEEK, (struct sockaddr*) &theiraddress, &theirlength) == -1){
+
+    printf("Ici? WFC\n");
     return -1;
   }
 
-  if(connect(sfd, (struct sockaddr*) theiraddress,(int) theirlength)== -1){
-    free(buf);
-    free(theiraddress);
+  if(connect(sfd, (struct sockaddr*)& theiraddress,(int) theirlength)== -1){
     return -1;
   }
-  free(buf);
-  free(theiraddress);
   return 0;
 }
