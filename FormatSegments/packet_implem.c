@@ -1,5 +1,6 @@
 #include "packet_interface.h"
-# include <zlib.h> /* crc32 */
+#include <zlib.h> /* crc32 */
+#include <stdlib.h> /* malloc/calloc */
 
 
 /* Extra #includes */
@@ -126,9 +127,40 @@ pkt_status_code pkt_set_crc2(pkt_t *pkt, const uint32_t crc2)
 	/* Your code will be inserted here */
 }
 
-pkt_status_code pkt_set_payload(pkt_t *pkt,
-							    const char *data,
-								const uint16_t length)
+/* Defini la valeur du champs payload du paquet.
+ * @data: Une succession d'octets representants le payload
+ * @length: Le nombre d'octets composant le payload
+ * @POST: pkt_get_length(pkt) == length */
+pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t length)
 {
-	/* Your code will be inserted here */
+	//length &= 0xFFFF;
+	// question : length en host byte order??
+
+	if(pkt == NULL)
+		return E_UNCONSISTENT; // packet incohérent
+
+	if(pkt->payload != NULL) // il y avait deja un packet
+	{
+		free(payload);
+		pkt->payload = NULL;
+		pkt_set_length(pkt) = 0;
+	}
+
+	if(data == NULL || length == 0) // payload nul
+	{
+		return E_UNCONSISTENT; // a changer? 
+	}
+	else
+	{
+		if(length <= 512)
+		{
+			pkt->payload = (char *)malloc(length*sizof(char));
+			if(pkt->payload == NULL)
+				return 
+		}
+		else // data trop grand
+		{
+
+		}
+	}
 }
