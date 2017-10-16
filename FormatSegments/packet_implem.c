@@ -39,52 +39,73 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
 	/* Your code will be inserted here */
 }
+/* Accesseurs pour les champs toujours presents du paquet.
+ * Les valeurs renvoyees sont toutes dans l'endianness native
+ * de la machine!
+ */
 
-ptypes_t pkt_get_type  (const pkt_t*)
+
+ptypes_t pkt_get_type  (const pkt_t* pkt)
 {
-	/* Your code will be inserted here */
+	return pkt->type;
 }
 
-uint8_t  pkt_get_tr(const pkt_t*)
+uint8_t  pkt_get_tr(const pkt_t* pkt)
 {
-	/* Your code will be inserted here */
+	return pkt->trFlag;
 }
 
-uint8_t  pkt_get_window(const pkt_t*)
+uint8_t  pkt_get_window(const pkt_t* pkt)
 {
-	/* Your code will be inserted here */
+	return pkt->window;
 }
 
 uint8_t  pkt_get_seqnum(const pkt_t*)
 {
-	/* Your code will be inserted here */
+	return pkt->seqNum;
 }
 
-uint16_t pkt_get_length(const pkt_t*)
+uint16_t pkt_get_length(const pkt_t* pkt)
 {
-	/* Your code will be inserted here */
+	return ntohs(pkt->length);
 }
 
-uint32_t pkt_get_timestamp   (const pkt_t*)
+uint32_t pkt_get_timestamp   (const pkt_t* pkt)
 {
-	/* Your code will be inserted here */
+	return pkt->timestamp;
 }
 
-uint32_t pkt_get_crc1   (const pkt_t*)
+uint32_t pkt_get_crc1   (const pkt_t* pkt)
 {
-	/* Your code will be inserted here */
+	return pkt->crc1;
 }
-
-uint32_t pkt_get_crc2   (const pkt_t*)
+/* Renvoie le CRC2 dans l'endianness native de la machine. Si
+ * ce field n'est pas present, retourne 0.
+ */
+uint32_t pkt_get_crc2   (const pkt_t* pkt)
 {
-	/* Your code will be inserted here */
+	if(pkt_get_tr != 0 || pkt_get_length == 0){
+		return 0;
+	}
+	return pkt->crc2;
 }
 
-const char* pkt_get_payload(const pkt_t*)
+/* Renvoie un pointeur vers le payload du paquet, ou NULL s'il n'y
+ * en a pas.
+ */
+const char* pkt_get_payload(const pkt_t* pkt)
 {
-	/* Your code will be inserted here */
+	if(pkt_get_length(pkt) == 0){
+		return NULL;
+	}
+	return pkt->payload;
 }
 
+/* Setters pour les champs obligatoires du paquet. Si les valeurs
+ * fournies ne sont pas dans les limites acceptables, les fonctions
+ * doivent renvoyer un code d'erreur adapte.
+ * Les valeurs fournies sont dans l'endianness native de la machine!
+ */
 
 pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
 {
@@ -93,7 +114,11 @@ pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
 
 pkt_status_code pkt_set_tr(pkt_t *pkt, const uint8_t tr)
 {
-	/* Your code will be inserted here */
+	if(tr != 0 && tr!= 1){
+		return E_TR;
+	}
+	pkt->trFlag = tr
+	return PKT_OK;
 }
 
 pkt_status_code pkt_set_window(pkt_t *pkt, const uint8_t window)
