@@ -1,6 +1,7 @@
 #include "packet_interface.h"
 # include <zlib.h> /* crc32 */
-
+#include <stdlib.h> /* malloc/calloc */
+#include <string.h> /* memcpy */
 
 /* Extra #includes */
 /* Your code will be inserted here */
@@ -109,7 +110,16 @@ const char* pkt_get_payload(const pkt_t* pkt)
 
 pkt_status_code pkt_set_type(pkt_t *pkt, const ptypes_t type)
 {
-	/* Your code will be inserted here */
+	// + vérifier que sur 2 bit?
+
+	if(type == PTYPE_DATA || type == PTYPE_ACK || type == PTYPE_NACK)
+	{
+		pkt->type = type;
+	}
+	else
+		return E_TYPE;
+
+	return PKT_OK;
 }
 
 pkt_status_code pkt_set_tr(pkt_t *pkt, const uint8_t tr)
@@ -151,9 +161,50 @@ pkt_status_code pkt_set_crc2(pkt_t *pkt, const uint32_t crc2)
 	/* Your code will be inserted here */
 }
 
-pkt_status_code pkt_set_payload(pkt_t *pkt,
-							    const char *data,
-								const uint16_t length)
+/* Defini la valeur du champs payload du paquet.
+ * @data: Une succession d'octets representants le payload
+ * @length: Le nombre d'octets composant le payload
+ * @POST: pkt_get_length(pkt) == length */
+pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t length)
 {
-	/* Your code will be inserted here */
+	//length &= 0xFFFF;
+	// question : length en host byte order??
+
+	if(pkt == NULL)
+		return E_UNCONSISTENT; // packet incohérent
+
+	if(pkt->payload != NULL) // il y avait deja un packet
+	{
+		free(payload);
+		pkt->payload = NULL;
+		pkt_status_code err = pkt_set_length(pkt, htons(0));
+		if(err != PKT_OK)
+			return E_LENGTH;
+	}
+
+	if(data == NULL || length == 0) // payload nul
+	{
+		return E_UNCONSISTENT; // a changer? 
+	}
+	else
+	{
+		if(length <= 512)
+		{
+			pkt->payload = (char *)malloc(length*sizof(char));
+			if(pkt->payload == NULL)
+				return E_NOMEN; // a verifier
+
+			memcpy((void *)pkt->payload, (void *) data, length);
+			pkt_status_code err = pkt_set_length(pkt, htons(length));
+			if(err != PKT_OK)
+				return E_LENGTH;
+
+			return PKT_OK;
+		}
+		else // data trop grand
+		{
+			return E_TR; 
+		}
+	}
+	return E_UNCONSISTENT;
 }
