@@ -1,10 +1,20 @@
 #include "packet_interface.h"
+# include <zlib.h> /* crc32 */
+
 
 /* Extra #includes */
 /* Your code will be inserted here */
 
 struct __attribute__((__packed__)) pkt {
-	/* Your code will be inserted here */
+	uint8_t type:2;
+	uint8_t trFlag:1;
+	uint8_t window:5;
+	uint8_t seqNum;
+	uint16_t length;
+	uint32_t timestamp;
+	uint32_t crc1;
+	char *payload;
+	uint32_t crc2;
 };
 
 /* Extra code */
