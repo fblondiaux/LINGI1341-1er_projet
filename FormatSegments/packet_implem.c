@@ -3,14 +3,15 @@
 #include <stdlib.h> /* malloc/calloc */
 #include <string.h> /* memcpy */
 #include <arpa/inet.h> /* htons */ 
+#include <stdio.h> /* fread */
 
 /* Extra #includes */
 /* Your code will be inserted here */
 
 struct __attribute__((__packed__)) pkt {
-	uint8_t type:2;
+	uint8_t window:5; // voir ordre en rouge dans les slides du feedback
 	uint8_t trFlag:1;
-	uint8_t window:5;
+	uint8_t type:2;
 	uint8_t seqNum;
 	uint16_t length;
 	uint32_t timestamp;
@@ -50,19 +51,84 @@ void pkt_del(pkt_t *pkt)
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-	/* Your code will be inserted here */
+	// packet recu en network byte order ! ->est ce qu'il faut mettre des ntohs un peu partout?
+
+	size_t err = 0;
+	pkt_status_code ret = 0;
+
+	memcpy(pkt, data, 1);
+
+	if(pkt->type!=1 && pkt->type!=2 && pkt->type!=3) //verifie validite type packet
+		return E_TYPE;
+
+	uint8_t seqnum = 0;
+	uint16_t length = 0;
+	uint32_t timestamp = 0;
+	uint32_t crc1 = 0;
+	uint32_t crc2 = 0;
+
+	memcpy(&seqnum, data, 1);
+	ret = pkt_set_seqnum(pkt, seqnum);
+	if(ret!= PKT_OK)
+		return E_UNCONSISTENT;
+
+	memcpy(&length, data, 2);
+	ret = pkt_set_length(pkt, length);
+	if(ret != PKT_OK)
+		return E_UNCONSISTENT;
+
+	memcpy(&timestamp, data, 4);
+	ret = pkt_set_timestamp(pkt, timestamp);
+	if(ret!= PKT_OK)
+		return E_UNCONSISTENT;
+
+	// pas fini
+
+
+
+
 }
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
-	/* Your code will be inserted here */
+	int count = 0;
+	if( *len < 12) // verifie qu'il y a assez de place dans buffer pour mettre tout jusqu'au crc1
+	{
+		return E_NOMEM;
+	}
+
+	memcpy(buf, pkt, sizeof(uint8_t)); // copie de window,tr,type
+	memcpy(buf, pkt, sizeof(uint8_t)); // copie seqnum
+	count = count + 2;
+
+	uint16_t length = htons(pkt_get_length(pkt)); 
+	memcpy(buf, &length, sizeof(uint16_t)); // copie de lenth
+	count = count+2;
+	memcpy(buf, pkt, sizeof(uint32_t)); // sans endianness particuliere
+	count = count+4; 
+
+	// jusque là je crois que c'est bon (respecte bien le network byte order)
+
+	
+	// pas certaine que c'est juste
+	pkt->trFlag = 0;
+	char *inter = NULL;
+	memcpy(inter, pkt, 4);
+	uLong crc1 = crc32(pkt_get_crc1(pkt), inter, 4);
+	// uLong crc32(uLong crc, const Bytef * buf, uInt len);
+	/* erreur à la compilation : "expected ‘const Bytef * 
+	{aka const unsigned char *}’ but argument is of 
+	type ‘const pkt_t * {aka const struct pkt *}’" 
+	si je ne caste pas en char* */
+
+	// pas fini
 }
+
+
 /* Accesseurs pour les champs toujours presents du paquet.
  * Les valeurs renvoyees sont toutes dans l'endianness native
  * de la machine!
  */
-
-
 ptypes_t pkt_get_type  (const pkt_t* pkt)
 {
 	return pkt->type;
