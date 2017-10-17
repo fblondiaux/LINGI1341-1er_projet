@@ -142,7 +142,7 @@ pkt_status_code pkt_set_timestamp(pkt_t *pkt, const uint32_t timestamp)
 }
 
 pkt_status_code pkt_set_crc1(pkt_t *pkt, const uint32_t crc1)
-{
+{.
 	/* Your code will be inserted here */
 }
 
