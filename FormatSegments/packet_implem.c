@@ -24,12 +24,28 @@ struct __attribute__((__packed__)) pkt {
 
 pkt_t* pkt_new()
 {
-	/* Your code will be inserted here */
+	pkt_t *pkt = (pkt_t *)malloc(sizeof(pkt_t));
+	if(pkt = NULL)
+		return NULL;
+
+	pkt->type = 0;
+	pkt->trFlag = 0;
+	pkt->window = 0;
+	pkt->seqNum = 0;
+	pkt->length = 0;
+	pkt->timestamp = 0;
+	pkt->crc1 = 0;
+	pkt->payload = NULL;
+	pkt->crc2 = 0;
+	return pkt; 
 }
 
 void pkt_del(pkt_t *pkt)
 {
-    /* Your code will be inserted here */
+    if(pkt->payload != NULL)
+    	free(pkt->payload);
+
+    free(pkt);
 }
 
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
