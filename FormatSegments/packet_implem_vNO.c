@@ -2,6 +2,7 @@
 #include <zlib.h> /* crc32 */
 #include <stdlib.h> /* malloc/calloc */
 #include <string.h> /* memcpy */
+#include <arpa/inet.h> /* htons */ 
 
 
 /* Extra #includes */

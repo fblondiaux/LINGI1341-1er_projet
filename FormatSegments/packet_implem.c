@@ -2,6 +2,7 @@
 # include <zlib.h> /* crc32 */
 #include <stdlib.h> /* malloc/calloc */
 #include <string.h> /* memcpy */
+#include <arpa/inet.h> /* htons */ 
 
 /* Extra #includes */
 /* Your code will be inserted here */
@@ -61,7 +62,7 @@ uint8_t  pkt_get_window(const pkt_t* pkt)
 	return pkt->window;
 }
 
-uint8_t  pkt_get_seqnum(const pkt_t*)
+uint8_t  pkt_get_seqnum(const pkt_t* pkt)
 {
 	return pkt->seqNum;
 }
@@ -127,7 +128,7 @@ pkt_status_code pkt_set_tr(pkt_t *pkt, const uint8_t tr)
 	if(tr != 0 && tr!= 1){
 		return E_TR;
 	}
-	pkt->trFlag = tr
+	pkt->trFlag = tr;
 	return PKT_OK;
 }
 
@@ -138,7 +139,7 @@ pkt_status_code pkt_set_window(pkt_t *pkt, const uint8_t window)
 		pkt->window = 0; // a verifier
 		return E_WINDOW;	
 	}
-	pkt->window = window
+	pkt->window = window;
 	return PKT_OK;
 }
 
@@ -202,7 +203,7 @@ pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t len
 
 	if(pkt->payload != NULL) // il y avait deja un packet
 	{
-		free(payload);
+		free(pkt->payload);
 		pkt->payload = NULL;
 		pkt_status_code err = pkt_set_length(pkt, htons(0));
 		if(err != PKT_OK)
@@ -217,9 +218,9 @@ pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t len
 	{
 		if(length <= 512)
 		{
-			pkt->payload = (char *)malloc(length*sizof(char));
+			pkt->payload = (char *)malloc(length*sizeof(char));
 			if(pkt->payload == NULL)
-				return E_NOMEN; // a verifier
+				return E_NOMEM; // a verifier
 
 			memcpy((void *)pkt->payload, (void *) data, length);
 			pkt_status_code err = pkt_set_length(pkt, htons(length));
