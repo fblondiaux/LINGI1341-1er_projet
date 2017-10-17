@@ -133,12 +133,23 @@ pkt_status_code pkt_set_tr(pkt_t *pkt, const uint8_t tr)
 
 pkt_status_code pkt_set_window(pkt_t *pkt, const uint8_t window)
 {
-	/* Your code will be inserted here */
+	if(window >= 32)
+	{
+		pkt->window = 0; // a verifier
+		return E_WINDOW;	
+	}
+	pkt->window = window
+	return PKT_OK;
 }
 
 pkt_status_code pkt_set_seqnum(pkt_t *pkt, const uint8_t seqnum)
 {
-	/* Your code will be inserted here */
+	if( seqnum >= 255)
+		return E_SEQNUM;
+
+	if( pkt->type == PTYPE_DATA)
+		pkt->seqNum = seqnum;
+
 }
 
 pkt_status_code pkt_set_length(pkt_t *pkt, const uint16_t length)
