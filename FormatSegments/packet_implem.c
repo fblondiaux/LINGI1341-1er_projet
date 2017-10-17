@@ -147,29 +147,45 @@ pkt_status_code pkt_set_seqnum(pkt_t *pkt, const uint8_t seqnum)
 	if( seqnum >= 255)
 		return E_SEQNUM;
 
-	if( pkt->type == PTYPE_DATA)
+	if(pkt->type==PTYPE_DATA || pkt->type==PTYPE_NACK || pkt->type==PTYPE_ACK)
+	{
 		pkt->seqNum = seqnum;
+		return PKT_OK;
+	}
+	return E_UNCONSISTENT;
 
 }
 
 pkt_status_code pkt_set_length(pkt_t *pkt, const uint16_t length)
 {
-	/* Your code will be inserted here */
+	if(length >= 512)
+		return E_LENGTH;
+
+	pkt->length = htons(length);
+	return PKT_OK;
 }
 
 pkt_status_code pkt_set_timestamp(pkt_t *pkt, const uint32_t timestamp)
 {
-	/* Your code will be inserted here */
+	pkt->timestamp = timestamp;
+	return PKT_OK;
 }
 
 pkt_status_code pkt_set_crc1(pkt_t *pkt, const uint32_t crc1)
-{.
-	/* Your code will be inserted here */
+{
+	pkt->crc1 = htons(crc1);
+	return PKT_OK;
 }
 
 pkt_status_code pkt_set_crc2(pkt_t *pkt, const uint32_t crc2)
 {
-	/* Your code will be inserted here */
+	if(pkt->payload != NULL && pkt->trFlag == 0)
+	{
+		pkt->crc2 = htons(crc2);
+		return PKT_OK;
+	}
+	return E_UNCONSISTENT;
+
 }
 
 /* Defini la valeur du champs payload du paquet.
