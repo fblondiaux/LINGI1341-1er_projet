@@ -2,7 +2,7 @@
 # include <zlib.h> /* crc32 */
 #include <stdlib.h> /* malloc/calloc */
 #include <string.h> /* memcpy */
-#include <arpa/inet.h> /* htons */ 
+#include <arpa/inet.h> /* htons */
 #include <stdio.h> /* fread */
 
 /* Extra #includes */
@@ -26,8 +26,10 @@ struct __attribute__((__packed__)) pkt {
 pkt_t* pkt_new()
 {
 	pkt_t *pkt = (pkt_t *)malloc(sizeof(pkt_t));
-	if(pkt = NULL)
+	if(pkt == NULL){
 		return NULL;
+	}
+
 
 	pkt->type = 0;
 	pkt->trFlag = 0;
@@ -38,7 +40,7 @@ pkt_t* pkt_new()
 	pkt->crc1 = 0;
 	pkt->payload = NULL;
 	pkt->crc2 = 0;
-	return pkt; 
+	return pkt;
 }
 
 void pkt_del(pkt_t *pkt)
@@ -96,32 +98,53 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	{
 		return E_NOMEM;
 	}
-
-	memcpy(buf, pkt, sizeof(uint8_t)); // copie de window,tr,type
-	memcpy(buf, pkt, sizeof(uint8_t)); // copie seqnum
+	//Tous les commentaires par la suite sont à supprimer quand tu les auras lu :)
+	// Quand tu fait ça, il reprends la ou il en était, il ne recopie pas tout depuis
+	// le début du coup on aurait window tr type window tr type ?
+	// Et buf il serait réécrasé non ?
+	//memcpy(buf, pkt, sizeof(uint8_t)); // copie de window,tr,type
+	//memcpy(buf, pkt, sizeof(uint8_t)); // copie seqnum
+	// Ma proposition :
+	memcpy(buf,pkt,sizeof(uint16_t)); // Copie de window, tr, type, seqnum.
 	count = count + 2;
 
-	uint16_t length = htons(pkt_get_length(pkt)); 
-	memcpy(buf, &length, sizeof(uint16_t)); // copie de lenth
+	uint16_t length = htons(pkt_get_length(pkt));
+	//F: On peux faire buf+count pour etre au bon endroit ?
+	memcpy(buf+count, &length, sizeof(uint16_t)); // copie de lentgh
 	count = count+2;
-	memcpy(buf, pkt, sizeof(uint32_t)); // sans endianness particuliere
-	count = count+4; 
+	//F: Pareil, pkt+count pour être au bon endroit dans la structure ?
+	memcpy(buf+count, pkt+count, sizeof(uint32_t)); // sans endianness particuliere
+	count = count+4;
 
-	// jusque là je crois que c'est bon (respecte bien le network byte order)
 
-	
-	// pas certaine que c'est juste
-	pkt->trFlag = 0;
-	char *inter = NULL;
-	memcpy(inter, pkt, 4);
-	uLong crc1 = crc32(pkt_get_crc1(pkt), inter, 4);
-	// uLong crc32(uLong crc, const Bytef * buf, uInt len);
-	/* erreur à la compilation : "expected ‘const Bytef * 
-	{aka const unsigned char *}’ but argument is of 
-	type ‘const pkt_t * {aka const struct pkt *}’" 
+	// N: pas certaine que c'est juste
+	// F= Ça ne compile pas car pkt est const. En soi c'est logique mais comme tr
+	// Est un des premiers trucs a mettre dans le buffer, on le met quand à 0
+	pkt_set_tr(pkt, 0); //Vérifier la valeur de retour ?
+// char *inter = NULL;
+// F: CA fait pas une segfalt ça , un memcpy sur NULL?
+//N	memcpy(inter, pkt, 4);
+//N 	uLong crc1 = crc32(pkt_get_crc1(pkt), inter, 4);
+		// De ce que j'ai compris il calcule un crc sur les donnees passées dans le
+		// Deuxiemme argument.
+				//http://netbsd.gw.com/cgi-bin/man-cgi?zlib+3+NetBSD-current
+				//uLong crc32(uLong crc, const Bytef *buf, uInt len);
+				//The crc32() function updates a running CRC with the bytes
+				//buf[0..len-1] and returns the updated CRC.  If buf is NULL, this
+				//function returns the required initial value for the CRC.  Pre-
+				//and post-conditioning (one's complement) is performed within this
+				//function so it shouldn't be done by the application.
+	uLong crc1 = crc32(pkt_get_crc1(pkt),(Bytef*) buf, count);
+
+	/* erreur à la compilation : "expected ‘const Bytef *
+	{aka const unsigned char *}’ but argument is of
+	type ‘const pkt_t * {aka const struct pkt *}’"
 	si je ne caste pas en char* */
 
 	// pas fini
+	// F: pour la suite je dirais qu'il faut mettre le payload ( de nouveau comment)
+	// changer tr si on s'appercoit qu'il n'y à pas assez de place. Et quand payload est ajouté
+	// Alors on fait crc
 }
 
 
@@ -161,17 +184,17 @@ uint32_t pkt_get_timestamp   (const pkt_t* pkt)
 
 uint32_t pkt_get_crc1   (const pkt_t* pkt)
 {
-	return pkt->crc1;
+	return ntohl(pkt->crc1);
 }
 /* Renvoie le CRC2 dans l'endianness native de la machine. Si
  * ce field n'est pas present, retourne 0.
  */
 uint32_t pkt_get_crc2   (const pkt_t* pkt)
 {
-	if(pkt_get_tr != 0 || pkt_get_length == 0){
+	if(pkt_get_tr(pkt) != 0 || pkt_get_length(pkt) == 0){
 		return 0;
 	}
-	return pkt->crc2;
+	return ntohl(pkt->crc2);
 }
 
 /* Renvoie un pointeur vers le payload du paquet, ou NULL s'il n'y
@@ -219,7 +242,7 @@ pkt_status_code pkt_set_window(pkt_t *pkt, const uint8_t window)
 	if(window >= 32)
 	{
 		pkt->window = 0; // a verifier
-		return E_WINDOW;	
+		return E_WINDOW;
 	}
 	pkt->window = window;
 	return PKT_OK;
@@ -256,7 +279,7 @@ pkt_status_code pkt_set_timestamp(pkt_t *pkt, const uint32_t timestamp)
 
 pkt_status_code pkt_set_crc1(pkt_t *pkt, const uint32_t crc1)
 {
-	pkt->crc1 = htons(crc1);
+	pkt->crc1 = htonl(crc1);
 	return PKT_OK;
 }
 
@@ -264,7 +287,7 @@ pkt_status_code pkt_set_crc2(pkt_t *pkt, const uint32_t crc2)
 {
 	if(pkt->payload != NULL && pkt->trFlag == 0)
 	{
-		pkt->crc2 = htons(crc2);
+		pkt->crc2 = htonl(crc2);
 		return PKT_OK;
 	}
 	return E_UNCONSISTENT;
@@ -294,7 +317,7 @@ pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t len
 
 	if(data == NULL || length == 0) // payload nul
 	{
-		return E_UNCONSISTENT; // a changer? 
+		return E_UNCONSISTENT; // a changer?
 	}
 	else
 	{
@@ -313,7 +336,7 @@ pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t len
 		}
 		else // data trop grand
 		{
-			return E_TR; 
+			return E_TR;
 		}
 	}
 	return E_UNCONSISTENT;
