@@ -94,37 +94,25 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
 	int count = 0;
+	// Verifier aussi si payload present.
 	if( *len < 12) // verifie qu'il y a assez de place dans buffer pour mettre tout jusqu'au crc1
 	{
 		return E_NOMEM;
 	}
-	//Tous les commentaires par la suite sont à supprimer quand tu les auras lu :)
-	// Quand tu fait ça, il reprends la ou il en était, il ne recopie pas tout depuis
-	// le début du coup on aurait window tr type window tr type ?
-	// Et buf il serait réécrasé non ?
-	//memcpy(buf, pkt, sizeof(uint8_t)); // copie de window,tr,type
-	//memcpy(buf, pkt, sizeof(uint8_t)); // copie seqnum
-	// Ma proposition :
-	memcpy(buf,pkt,sizeof(uint16_t)); // Copie de window, tr, type, seqnum.
+	// On mettrait tr direct à 0 ?
+	memcpy(buf, pkt, sizeof(uint8_t)); // copie de window,tr,type
+	memcpy(buf+1, pkt->seqnum, sizeof(uint8_t)); // copie seqnum
 	count = count + 2;
 
 	uint16_t length = htons(pkt_get_length(pkt));
-	//F: On peux faire buf+count pour etre au bon endroit ?
 	memcpy(buf+count, &length, sizeof(uint16_t)); // copie de lentgh
 	count = count+2;
-	//F: Pareil, pkt+count pour être au bon endroit dans la structure ?
-	memcpy(buf+count, pkt+count, sizeof(uint32_t)); // sans endianness particuliere
+	memcpy(buf+count, pkt->timestamp, sizeof(uint32_t)); // sans endianness particuliere, htons ?
 	count = count+4;
 
-
-	// N: pas certaine que c'est juste
 	// F= Ça ne compile pas car pkt est const. En soi c'est logique mais comme tr
 	// Est un des premiers trucs a mettre dans le buffer, on le met quand à 0
 	pkt_set_tr(pkt, 0); //Vérifier la valeur de retour ?
-// char *inter = NULL;
-// F: CA fait pas une segfalt ça , un memcpy sur NULL?
-//N	memcpy(inter, pkt, 4);
-//N 	uLong crc1 = crc32(pkt_get_crc1(pkt), inter, 4);
 		// De ce que j'ai compris il calcule un crc sur les donnees passées dans le
 		// Deuxiemme argument.
 				//http://netbsd.gw.com/cgi-bin/man-cgi?zlib+3+NetBSD-current
@@ -136,14 +124,10 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 				//function so it shouldn't be done by the application.
 	uLong crc1 = crc32(pkt_get_crc1(pkt),(Bytef*) buf, count);
 
-	/* erreur à la compilation : "expected ‘const Bytef *
-	{aka const unsigned char *}’ but argument is of
-	type ‘const pkt_t * {aka const struct pkt *}’"
-	si je ne caste pas en char* */
-
-	// pas fini
-	// F: pour la suite je dirais qu'il faut mettre le payload ( de nouveau comment)
-	// changer tr si on s'appercoit qu'il n'y à pas assez de place. Et quand payload est ajouté
+ /// Mettre crc1 ds buffer
+ // SI payload présent.
+ 	// F: pour la suite je dirais qu'il faut mettre le payload ( de nouveau comment)
+	// sEt quand payload est ajouté
 	// Alors on fait crc
 }
 
