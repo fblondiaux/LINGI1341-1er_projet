@@ -1,4 +1,4 @@
-#include "packet_interface.h"
+			#include "packet_interface.h"
 # include <zlib.h> /* crc32 */
 #include <stdlib.h> /* malloc/calloc */
 #include <string.h> /* memcpy */
@@ -103,7 +103,6 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	memcpy(buf, pkt, sizeof(uint8_t)); // copie de window,tr,type
 	memcpy(buf+1, pkt->seqnum, sizeof(uint8_t)); // copie seqnum
 	count = count + 2;
-
 	uint16_t length = htons(pkt_get_length(pkt));
 	memcpy(buf+count, &length, sizeof(uint16_t)); // copie de lentgh
 	count = count+2;
@@ -122,6 +121,10 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 				//function returns the required initial value for the CRC.  Pre-
 				//and post-conditioning (one's complement) is performed within this
 				//function so it shouldn't be done by the application.
+
+
+		// Ce qu'on m'a dit c'est crééer une structure identique sauf pour tr qu'on 
+		// met a zero , on calcule le crc la dessus.
 	uLong crc1 = crc32(pkt_get_crc1(pkt),(Bytef*) buf, count);
 
  /// Mettre crc1 ds buffer
