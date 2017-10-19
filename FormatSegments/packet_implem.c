@@ -96,15 +96,6 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	// Préparation pour la vérification de crc1
 	if(pkt_get_tr(pkt) == 1 )
 	{
-		// pkt_set_tr(0);
-		// char buftemp[8];
-		// 	memcpy(buftemp, pkt, 8);
-
-		// 	if(crc32(crc,(Bytef*) buftemp, 😎 != pkt_get_crc1(pkt)){
-		// 		return E_CRC;
-		// 	}
-
-		// 	pkt_set_tr(ancientr); // On remet le tr à sa valeur initiale.
 		return E_TR;
 	}
 
@@ -152,7 +143,18 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 }
 
 
-
+/*
+ * Encode une struct pkt dans un buffer, prÃªt a Ãªtre envoye sur le reseau
+ * (c-a-d en network byte-order), incluant le CRC32 du header et
+ * eventuellement le CRC32 du payload si celui-ci est non nul.
+ *
+ * @pkt: La structure a encoder
+ * @buf: Le buffer dans lequel la structure sera encodee
+ * @len: La taille disponible dans le buffer
+ * @len-POST: Le nombre de d'octets ecrit dans le buffer
+ * @return: Un code indiquant si l'operation a reussi ou E_NOMEM si
+ *         le buffer est trop petit.
+ */
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
 	int count = 0;
@@ -170,15 +172,12 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 			return E_NOMEM;
 	}
 
-
 	if(pkt_get_length(pkt) != 0 && *(len) < (size_t) (pkt_get_length(pkt))+4+12 ) // si payload du pkt non nul, il faut verifier qu'il y a assez de place dans buf
 	{
 					fprintf(stderr,"3 E_NOMEM \n" );
 		return E_NOMEM;
 	}
 
-
-	///
 	memcpy(buf, pkt, 8); // copie de window,tr,type, length, timestamp
 	pkt_t* temp = (pkt_t *) malloc(8);
 	if(temp == NULL){
