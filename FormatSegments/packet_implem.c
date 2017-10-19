@@ -81,7 +81,8 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	if(data == NULL || len < 12 || pkt == NULL)
 		E_UNCONSISTENT;
 
-	if( len > 12){
+	if( len > 12)
+	{
 		int temp = len-16;
 		if (temp == -4){
 			taille_payl = 0; // Pas de payload
@@ -96,7 +97,8 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	memcpy(pkt, data, 12); // copie des 12 prem bytes (jusqu'a crc1 y compris)
 
 	// Préparation pour la vérification de crc1
-	if(pkt_get_tr(pkt) == 1 ) {
+	if(pkt_get_tr(pkt) == 1 ) 
+	{
 		// pkt_set_tr(0);
 		// char buftemp[8];
 	 // 	memcpy(buftemp, pkt, 8);
@@ -107,13 +109,15 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 
 	 // 	pkt_set_tr(ancientr); // On remet le tr à sa valeur initiale.
 		return E_TR;
-	 }
+	}
 
- 	else{
- 		if(crc32(crc,(Bytef*) data, 😎 != pkt_get_crc1(pkt)){
+ 	else
+ 	{
+ 		if(crc32(crc,(Bytef*) data, 8) != pkt_get_crc1(pkt))
+ 		{
 	 		return E_CRC;
 	 	}
-	}
+ 	}
 
 	if( taille_payl != pkt_get_length){
 		// ?
@@ -142,7 +146,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 
 	}
 
-}
+
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
