@@ -45,6 +45,7 @@ void read_write_loop(const int sfd){
         printf("Apres read avant write\n");
         int ecrit = write(STDOUT_FILENO, buf1, recu);
         if(ecrit != recu){
+          return;
         }
       }
       // check for events on s2:
