@@ -29,6 +29,8 @@ pkt_t* pkt_new()
 	if(pkt == NULL){
 		return NULL;
 	}
+
+
 	pkt->type = 0;
 	pkt->trFlag = 0;
 	pkt->window = 0;
@@ -45,6 +47,7 @@ void pkt_del(pkt_t *pkt)
 {
 	if(pkt->payload != NULL)
 	free(pkt->payload);
+
 	free(pkt);
 }
 
@@ -105,12 +108,11 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 		return E_TR;
 	}
 
-	else
+
+	if(crc32(crc,(Bytef*) data, 8) != pkt_get_crc1(pkt) )
 	{
-		if(crc32(crc,(Bytef*) data, 8) != pkt_get_crc1(pkt))
-		{
-			return E_CRC;
-		}
+		fprintf(stderr, "Crc1 \n");
+		return E_CRC;
 	}
 	// Verification length
 	if( taille_payl != pkt_get_length(pkt)){
@@ -129,7 +131,11 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 		memcpy(payload, data+12, taille_payl); // copie du payload dans payload
 		uint32_t crc2 ;
 		memcpy(&crc2, data+12+taille_payl, 4);
+		crc2 = ntohl(crc2);
+
+
 		if( crc32(crc, (Bytef *) data+12, taille_payl) != crc2){ // verifie que le payload a la bonne valeur du crc2
+			fprintf(stderr, "Crc2 \n");
 			return E_CRC;
 		}
 		err = pkt_set_payload(pkt,data+12, taille_payl);
@@ -150,17 +156,24 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
 	int count = 0;
-	if( buf==NULL || *len == 0)
-	return E_NOMEM;
+	if( buf==NULL || *len == 0){
+		fprintf(stderr,"premier E_NOMEM \n" );
+		return E_NOMEM;
+	}
 
 	if( pkt == NULL)
-	return E_UNCONSISTENT;
+		return PKT_OK;
 
-	if(*len < 12)
-	return E_NOMEM;
+	if(*len < 12){
 
-	if(pkt->length != 0 && *(len) < (size_t) (pkt->length)+4+12 ) // si payload du pkt non nul, il faut verifier qu'il y a assez de place dans buf
+			fprintf(stderr,"2 E_NOMEM \n" );
+			return E_NOMEM;
+	}
+
+
+	if(pkt_get_length(pkt) != 0 && *(len) < (size_t) (pkt_get_length(pkt))+4+12 ) // si payload du pkt non nul, il faut verifier qu'il y a assez de place dans buf
 	{
+					fprintf(stderr,"3 E_NOMEM \n" );
 		return E_NOMEM;
 	}
 
@@ -168,20 +181,27 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	///
 	memcpy(buf, pkt, 8); // copie de window,tr,type, length, timestamp
 	pkt_t* temp = (pkt_t *) malloc(8);
-	if(temp == NULL)
-	return E_NOMEM;
+	if(temp == NULL){
+
+			fprintf(stderr,"4 E_NOMEM \n" );
+
+			return E_NOMEM;
+	}
+
 	memcpy(temp, pkt, 8);
 	temp->trFlag = 0;
 	count = 8;
 	char* buftemp = (char *) malloc(8);
-	if(buftemp == NULL)
-	return E_NOMEM;
+	if(buftemp == NULL){
+		fprintf(stderr,"5 E_NOMEM \n" );
+		return E_NOMEM;
+	}
 
 	memcpy(buftemp, temp ,8); // copie de window,tr=0,type, seqnum, length, timestamp
 
 	uLong crc = crc32(0L, Z_NULL, 0);
 	uLong crc1 = crc32(crc,(Bytef*) temp, count);
-
+	crc1 = htonl(crc1);
 	memcpy(buf+count, &crc1, 4);
 	count +=4;
 
@@ -190,7 +210,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 		count += pkt_get_length(pkt);
 
 		uLong crc2 = crc32(crc, (Bytef*) pkt_get_payload(pkt), pkt_get_length(pkt));
-
+		crc2 = htonl(crc2);
 		memcpy(buf+count, &crc2, 4);
 		count += 4;
 	}
@@ -204,7 +224,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 * Les valeurs renvoyees sont toutes dans l'endianness native
 * de la machine!
 */
-ptypes_t pkt_get_type(const pkt_t* pkt)
+ptypes_t pkt_get_type  (const pkt_t* pkt)
 {
 	return pkt->type;
 }
@@ -362,14 +382,20 @@ pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t len
 	{
 		free(pkt->payload);
 		pkt->payload = NULL;
-		pkt_status_code err = pkt_set_length(pkt, htons(0));
+		pkt_status_code err = pkt_set_length(pkt, 0);
 		if(err != PKT_OK)
 		return E_LENGTH;
 	}
 
-	if(data == NULL || length == 0) // payload nul
+	if(data == NULL && length == 0) // payload nul
 	{
-		return E_UNCONSISTENT; // a changer?
+		pkt->payload = NULL;
+		int err = pkt_set_length(pkt, 0);
+		return err; // Si tout c'est bien passé : PKT_OK
+	}
+
+	if(data == NULL || length == 0){
+		return E_UNCONSISTENT;
 	}
 	else
 	{
@@ -377,18 +403,15 @@ pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t len
 		{
 			pkt->payload = (char *)malloc(length*sizeof(char));
 			if(pkt->payload == NULL)
-			return E_NOMEM; // a verifier
+				return E_NOMEM; // a verifier
 
 			memcpy((void *)pkt->payload, (void *) data, length);
-			pkt_status_code err = pkt_set_length(pkt, htons(length));
-			if(err != PKT_OK)
-			return E_LENGTH;
-
-			return PKT_OK;
+			pkt_status_code err = pkt_set_length(pkt, length);
+			return err; // Si tout ok  : PKT_OK
 		}
 		else // data trop grand
 		{
-			return E_TR;
+			return E_UNCONSISTENT;
 		}
 	}
 	return E_UNCONSISTENT;
