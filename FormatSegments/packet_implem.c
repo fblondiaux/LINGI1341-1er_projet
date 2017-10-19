@@ -52,42 +52,39 @@ void pkt_del(pkt_t *pkt)
 }
 
 /*
- * Decode des donnees recues et cree une nouvelle structure pkt.
- * Le paquet recu est en network byte-order.
- * La fonction verifie que:
- * - Le CRC32 du header recu est le mÃªme que celui decode a la fin
- *   du header (en considerant le champ TR a 0)
- * - S'il est present, le CRC32 du payload recu est le meme que celui
- *   decode a la fin du payload
- * - Le type du paquet est valide
- * - La longueur du paquet et le champ TR sont valides et coherents
- *   avec le nombre d'octets recus.
- *
- * @data: L'ensemble d'octets constituant le paquet recu
- * @len: Le nombre de bytes recus
- * @pkt: Une struct pkt valide
- * @post: pkt est la representation du paquet recu
- *
- * @return: Un code indiquant si l'operation a reussi ou representant
- *         l'erreur rencontree.
- */
+* Decode des donnees recues et cree une nouvelle structure pkt.
+* Le paquet recu est en network byte-order.
+* La fonction verifie que:
+* - Le CRC32 du header recu est le mÃªme que celui decode a la fin
+*   du header (en considerant le champ TR a 0)
+* - S'il est present, le CRC32 du payload recu est le meme que celui
+*   decode a la fin du payload
+* - Le type du paquet est valide
+* - La longueur du paquet et le champ TR sont valides et coherents
+*   avec le nombre d'octets recus.
+*
+* @data: L'ensemble d'octets constituant le paquet recu
+* @len: Le nombre de bytes recus
+* @pkt: Une struct pkt valide
+* @post: pkt est la representation du paquet recu
+*
+* @return: Un code indiquant si l'operation a reussi ou representant
+*         l'erreur rencontree.
+*/
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
 
 
+	uLong crc = crc32(0L, Z_NULL, 0);
 	int taille_payl = 0;
-	size_t err = 0;
+	int err = 0;
 
 	if(data == NULL || len < 12 || pkt == NULL)
-		E_UNCONSISTENT;
+		return E_UNCONSISTENT;
 
-	if( len > 12)
-	{
+	if( len > 12){
 		int temp = len-16;
-		if (temp == -4){
-			taille_payl = 0; // Pas de payload
-		}
-		else if ( temp > 0){
+		if ( temp > 0){
 			taille_payl = temp;
 		}
 		else {
@@ -97,54 +94,59 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	memcpy(pkt, data, 12); // copie des 12 prem bytes (jusqu'a crc1 y compris)
 
 	// Préparation pour la vérification de crc1
-	if(pkt_get_tr(pkt) == 1 ) 
+	if(pkt_get_tr(pkt) == 1 )
 	{
 		// pkt_set_tr(0);
 		// char buftemp[8];
-	 // 	memcpy(buftemp, pkt, 8);
+		// 	memcpy(buftemp, pkt, 8);
 
-	 // 	if(crc32(crc,(Bytef*) buftemp, 😎 != pkt_get_crc1(pkt)){
-	 // 		return E_CRC;
-	 // 	}
+		// 	if(crc32(crc,(Bytef*) buftemp, 😎 != pkt_get_crc1(pkt)){
+		// 		return E_CRC;
+		// 	}
 
-	 // 	pkt_set_tr(ancientr); // On remet le tr à sa valeur initiale.
+		// 	pkt_set_tr(ancientr); // On remet le tr à sa valeur initiale.
 		return E_TR;
 	}
 
- 	else
- 	{
- 		if(crc32(crc,(Bytef*) data, 8) != pkt_get_crc1(pkt))
- 		{
-	 		return E_CRC;
-	 	}
- 	}
-
-	if( taille_payl != pkt_get_length){
-		// ?
+	else
+	{
+		if(crc32(crc,(Bytef*) data, 8) != pkt_get_crc1(pkt))
+		{
+			return E_CRC;
+		}
 	}
-	// Verifier si type est ok
-	// verifier si TR = 1
-
-
-
-
-	if(pkt->type!=1 && pkt->type!=2 && pkt->type!=3) //verifie validite type packet
+	// Verification length
+	if( taille_payl != pkt_get_length(pkt)){
+		return E_LENGTH;
+	}
+	// verification type
+	if(pkt->type!=1 && pkt->type!=2 && pkt->type!=3){ //verifie validite type packet
 		return E_TYPE;
+	}
 
-	// packet recu en network byte order ! ->est ce qu'il faut mettre des ntohs un peu partout?
 	if(taille_payl != 0){
 		char* payload = (char *) malloc( taille_payl);
 		if(payload == NULL) {
 			return E_NOMEM;
 		}
 		memcpy(payload, data+12, taille_payl); // copie du payload dans payload
-		int crc2 = 0;
-		memcpy(&crc2, data+12+taille_payl , 4); // copie du crc2 dans crc2
+		uint32_t crc2 ;
+		memcpy(&crc2, data+12+taille_payl, 4);
 		if( crc32(crc, (Bytef *) data+12, taille_payl) != crc2){ // verifie que le payload a la bonne valeur du crc2
 			return E_CRC;
 		}
+		err = pkt_set_payload(pkt,data+12, taille_payl);
+		if(err != PKT_OK){
+			return err;
+		}
+		err = pkt_set_crc2(pkt,crc2);
+		if(err != PKT_OK){
+			return err;
+		}
 
 	}
+	return PKT_OK;
+}
 
 
 
@@ -160,7 +162,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	if(*len < 12)
 	return E_NOMEM;
 
-	if(pkt->length != 0 && *len < (pkt->length)+4+12 ) // si payload du pkt non nul, il faut verifier qu'il y a assez de place dans buf
+	if(pkt->length != 0 && *(len) < (size_t) (pkt->length)+4+12 ) // si payload du pkt non nul, il faut verifier qu'il y a assez de place dans buf
 	{
 		return E_NOMEM;
 	}
