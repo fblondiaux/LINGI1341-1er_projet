@@ -29,8 +29,6 @@ pkt_t* pkt_new()
 	if(pkt == NULL){
 		return NULL;
 	}
-
-
 	pkt->type = 0;
 	pkt->trFlag = 0;
 	pkt->window = 0;
@@ -47,7 +45,6 @@ void pkt_del(pkt_t *pkt)
 {
 	if(pkt->payload != NULL)
 	free(pkt->payload);
-
 	free(pkt);
 }
 
@@ -145,6 +142,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 		}
 
 	}
+}
 
 
 
@@ -205,7 +203,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 * Les valeurs renvoyees sont toutes dans l'endianness native
 * de la machine!
 */
-ptypes_t pkt_get_type  (const pkt_t* pkt)
+ptypes_t pkt_get_type(const pkt_t* pkt)
 {
 	return pkt->type;
 }
