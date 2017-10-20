@@ -43,6 +43,7 @@ void read_write_loop(const int sfd){
         int recu = read(sfd, buf1, sizeof buf1); // receive normal data
         int ecrit = write(STDOUT_FILENO, buf1, recu);
         if(ecrit != recu){
+          return;
         }
       }
       // check for events on s2:
