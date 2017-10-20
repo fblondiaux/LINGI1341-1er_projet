@@ -12,11 +12,10 @@
 * @return: as soon as stdin signals EOF
 */
 void read_write_loop(const int sfd){
-  // COde issus du cours de Systeme informatique
 
-    char buf1[1024];
-    char buf2[1024];
-    int end = 0;
+  char buf1[1024];
+  char buf2[1024];
+  int end = 0;
   struct pollfd ufds[2];
   // Eventuellement checker si ça donne une erreur.
   ufds[0].fd = sfd;
@@ -27,7 +26,10 @@ void read_write_loop(const int sfd){
   while(end == 0 ){
     memset((void*)buf1, 0, 1024); // make sure the struct is empty
     memset((void*)buf2, 0, 1024);
+    // attend evenement pendant 5 sec
     int rv = poll(ufds, 2, 5000);
+
+    // timeout expire
     if(rv==0){
       fprintf(stderr, "Time out\n");
       return;
@@ -38,24 +40,23 @@ void read_write_loop(const int sfd){
       return ;
     }
     else {
+
+      // traite la lecture 
       if (ufds[0].revents & POLLIN) {
-        //Eventuellement verifier le malloc
-        printf("serveur passe ici poll in\n");
+        printf("il y a de quoi lire!\n");
         int recu = read(sfd, buf1, sizeof buf1); // receive normal data
-        printf("Apres read avant write\n");
         int ecrit = write(STDOUT_FILENO, buf1, recu);
         if(ecrit != recu){
           return;
         }
       }
-      // check for events on s2:
+      // traite l'ecriture 
       if(ufds[1].revents & POLLIN)  {
-        printf("Serveur passe ici pollout\n" );
+        printf("j'ai écrit!\n");
         int lu = read(STDIN_FILENO,buf2,1024);
-        printf("Apres read\n");
         int sended = write(sfd,buf2,lu);
         if(sended != lu){
-          fprintf(stderr, "Erreur lors de l'envoie\n");
+          fprintf(stderr, "Erreur lors de l'envoi\n");
         }
       }
     }
