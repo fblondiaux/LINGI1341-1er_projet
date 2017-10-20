@@ -49,7 +49,6 @@ int main(int argc, char *argv[])
 	/* Get a socket */
 	int sfd;
 	if (client) {
-		printf("C'esst pour moi ?  \n");
 		sfd = create_socket(NULL, -1, &addr, port); /* Connected */
 	} else {
 		sfd = create_socket(&addr, port, NULL, -1); /* Bound */

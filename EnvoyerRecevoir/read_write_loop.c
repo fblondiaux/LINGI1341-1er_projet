@@ -40,18 +40,14 @@ void read_write_loop(const int sfd){
     else {
       if (ufds[0].revents & POLLIN) {
         //Eventuellement verifier le malloc
-        printf("serveur passe ici poll in\n");
         int recu = read(sfd, buf1, sizeof buf1); // receive normal data
-        printf("Apres read avant write\n");
         int ecrit = write(STDOUT_FILENO, buf1, recu);
         if(ecrit != recu){
         }
       }
       // check for events on s2:
       if(ufds[1].revents & POLLIN)  {
-        printf("Serveur passe ici pollout\n" );
         int lu = read(STDIN_FILENO,buf2,1024);
-        printf("Apres read\n");
         int sended = write(sfd,buf2,lu);
         if(sended != lu){
           fprintf(stderr, "Erreur lors de l'envoie\n");
