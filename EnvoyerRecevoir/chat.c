@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 	int client = 0;
 	int port = 12345;
 	int opt;
-	char *host = "::1";
+	char *host = "::1"; // hote. ::11->meme machine; ::1==localhost.
 
 	while ((opt = getopt(argc, argv, "scp:h:")) != -1) {
 		switch (opt) {
@@ -48,10 +48,18 @@ int main(int argc, char *argv[])
 	}
 	/* Get a socket */
 	int sfd;
-	if (client) {
+
+	if (client) { // true == 1
+		printf("Je suis le client\n");
+		// creer socket et l'initialiser (lier adresse et port), sfd = num fd ou -1 si erreur
 		sfd = create_socket(NULL, -1, &addr, port); /* Connected */
-	} else {
+	}
+	else {
+		printf("Je suis le serveur\n");
+		// creer socket et l'initialiser (lier adresse et port), sfd = num fd ou -1 si erreur
 		sfd = create_socket(&addr, port, NULL, -1); /* Bound */
+
+		// wait_for_client(sfd) : attend que le programme soit runné autre part en mode client
 		if (sfd > 0 && wait_for_client(sfd) < 0) { /* Connected */
 			fprintf(stderr,
 					"Could not connect the socket after the first message.\n");
