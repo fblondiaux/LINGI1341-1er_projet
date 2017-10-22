@@ -3,4 +3,4 @@
 #include "wait_for_client.h"
 #include "packet_interface.h"
 
-int main(int argc, char const *argv[]);
+int main(int argc, char *argv[]);
