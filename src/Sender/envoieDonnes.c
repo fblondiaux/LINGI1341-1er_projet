@@ -151,6 +151,7 @@ selectiveRepeat_status_code checkReceive(const char* buf, const size_t len, stru
   // on choisit d'ignorer le packet. Le time-out s'occupera de renvoyer le packet qui a été reçu tronqué. 
   if(type == PTYPE_NACK)
   {
+    // renvoyer packet
     return IGNORE;
   }
   return IGNORE;
