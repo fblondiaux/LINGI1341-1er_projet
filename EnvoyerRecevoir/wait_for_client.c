@@ -24,7 +24,7 @@ int wait_for_client(int sfd){
   struct sockaddr_in6 theiraddress;
   socklen_t theirlength = sizeof(struct sockaddr_in6);
 
-  // recevoir message (adresse source) sur socket 
+  // recevoir message (adresse source) sur socket
   // bloquant jusqu'a ce que message disponible
   if(recvfrom(sfd, buf, MAXBUFLEN ,MSG_PEEK, (struct sockaddr*) &theiraddress, &theirlength) == -1){
 

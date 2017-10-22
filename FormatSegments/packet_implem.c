@@ -159,7 +159,6 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
 	int count = 0;
 	if( buf==NULL || *len == 0){
-		fprintf(stderr,"premier E_NOMEM \n" );
 		return E_NOMEM;
 	}
 
@@ -168,21 +167,17 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 
 	if(*len < 12){
 
-			fprintf(stderr,"2 E_NOMEM \n" );
 			return E_NOMEM;
 	}
 
 	if(pkt_get_length(pkt) != 0 && *(len) < (size_t) (pkt_get_length(pkt))+4+12 ) // si payload du pkt non nul, il faut verifier qu'il y a assez de place dans buf
 	{
-					fprintf(stderr,"3 E_NOMEM \n" );
 		return E_NOMEM;
 	}
 
 	memcpy(buf, pkt, 8); // copie de window,tr,type, length, timestamp
 	pkt_t* temp = (pkt_t *) malloc(8);
 	if(temp == NULL){
-
-			fprintf(stderr,"4 E_NOMEM \n" );
 
 			return E_NOMEM;
 	}
@@ -192,7 +187,6 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	count = 8;
 	char* buftemp = (char *) malloc(8);
 	if(buftemp == NULL){
-		fprintf(stderr,"5 E_NOMEM \n" );
 		return E_NOMEM;
 	}
 
