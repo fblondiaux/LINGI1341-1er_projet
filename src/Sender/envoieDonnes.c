@@ -1,4 +1,4 @@
-#include "packet_interface.h"
+
 #include "envoieDonnes.h"
 
 #include <sys/poll.h>
@@ -88,7 +88,7 @@ int del(pkt_t *pkt, struct head *buf)
 * Receiver a recu a recu des donnees (normalment d'acquittement ou de non-acquittement)
 * checkReceive gere ces donnees. 
 */
-selectiveRepeat_status_code checkReceive(const char* buf, const size_t len, struct head *recpetion)
+int checkReceive(const char* buf, const size_t len, struct head *recpetion)
 {
   pkt_t *pkt = pkt_new();
 
@@ -97,7 +97,7 @@ selectiveRepeat_status_code checkReceive(const char* buf, const size_t len, stru
   if(err != PKT_OK)
   {
     fprintf(stderr, "erreur dans décodage\n");
-    return IGNORE;
+    return -1;
   }
 
   // verifier type  et tr du packet recu 
@@ -107,24 +107,24 @@ selectiveRepeat_status_code checkReceive(const char* buf, const size_t len, stru
   if( type == PTYPE_DATA || trFlag != 0)
   {
     fprintf(stderr, "type de packet incohérent ou packet tronqué");
-    return IGNORE; // ignore
+    return -1;; // ignore
   }
 
   // verifier qu'on est bien censé recevoir ce packet : min <= seqnum <= max, et timestamp correct
   if( min < max)
   {
     if(pkt_get_seqnum(pkt) < min || pkt_get_seqnum(pkt) > max)
-      return IGNORE;
+      return 0;
   }
   if( min > max)
   {
     if(max < pkt_get_seqnum(pkt) && pkt_get_seqnum(pkt)< min)
-      return IGNORE;
+      return 0;
   }
   else
   {
     if ((uint32_t)time(NULL) > (pkt_get_timestamp(pkt)+5))
-      return IGNORE;
+      return 0;
   }
 
   // packet d'acquittement
@@ -142,9 +142,9 @@ selectiveRepeat_status_code checkReceive(const char* buf, const size_t len, stru
     if (ret!= 0)
     {
       fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
-      return IGNORE; 
+      return -1; 
     }
-    return IGNORE;
+    return 0;
   } 
 
   // packet de non acquittement. 
@@ -152,9 +152,9 @@ selectiveRepeat_status_code checkReceive(const char* buf, const size_t len, stru
   if(type == PTYPE_NACK)
   {
     // renvoyer packet
-    return IGNORE;
+    return 0;
   }
-  return IGNORE;
+  return -1;
 }
 
 

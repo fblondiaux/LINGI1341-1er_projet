@@ -13,20 +13,13 @@
 // = read_write_loop_sender
 
 
-typedef enum {
-  IGNORE = 0,     /* A ete ignore */
-  S_ACK,           /* Necessite l'envoye d'un ack*/
-  S_NACK,            /* Necessite l'envoye d'un nack */
-  
-} selectiveRepeat_status_code;
-
 struct head {
-  struct node *liste;
+  struct node* liste;
 };
 
 struct node {
   pkt_t *pkt; 
-  struct node *next;
+  struct node* next;
 };
 
 
@@ -59,7 +52,7 @@ int del(pkt_t *pkt, struct head *buf);
 * @return : 
 *
 */
-selectiveRepeat_status_code checkReceive(const char* buf, const size_t len, struct head *reception);
+int checkReceive(const char* buf, const size_t len, struct head *reception);
 
 
 /*
