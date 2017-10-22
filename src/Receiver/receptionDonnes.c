@@ -52,7 +52,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK,
     pkt_t* reception = pkt_new();
     pkt_status_code err = pkt_decode(buf, taille, reception);
 
-    if (err= E_TR && pkt_get_type(reception) == 1)){
+    if (err == E_TR && pkt_get_type(reception) == 1){
       // On va devoir envoyer un NACK
       pkt_t* ack = pkt_new(); // Préparation de la structure à encoder
       pkt_set_type(ack, 3);
