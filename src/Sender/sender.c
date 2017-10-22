@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
   // N : oui je crois
   // Récuperation des arguments non optionnels.
 
+  printf("sender : 1\n");
   char* host = argv[optind];
   int port = atoi(argv[optind + 1]);
 
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  printf("sender : 2\n");
   // Création du socket.
   int sfd = create_socket(NULL, -1, &addr, port);
   if(sfd == -1){
@@ -74,9 +76,10 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-
+  printf("sender : 3\n");
   envoieDonnes(sfd, file);
 
+  printf("sender : 4\n");
   if(file != NULL){
     fclose(file);
   }

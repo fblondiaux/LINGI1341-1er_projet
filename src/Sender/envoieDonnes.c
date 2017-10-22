@@ -20,7 +20,7 @@ static int min = 0;
 static int max = 31;
 static int seqnum = 0;
 static int window_dest = 1;
-static int window = 32;
+static int window = 31;
 
 
 /* rajoute un elem a la fin de la liste
@@ -34,13 +34,16 @@ int add(pkt_t *pkt, struct head *buf)
   {
     ptr = ptr->next;
   }
+  printf("add : 1\n");
   struct node *elem = (struct node*)malloc(sizeof(struct node));
   if(elem == NULL)
     return -1;
-
+  printf("add : 2\n");
   elem->pkt = pkt;
   elem->next = NULL;
+  printf("add : 3\n");
   ptr->next = elem;
+  printf("add : 4\n");
   return 0;
 }
 
@@ -158,50 +161,85 @@ int checkReceive(const char* buf, const size_t len, struct head *recpetion)
 }
 
 
-int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *buf)
+int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *reception)
 {
   pkt_status_code err;
   pkt_t *pkt = pkt_new();
 
-
+  printf("prepareToSend : 1\n");
   // on insere les donnees dans le pkt
   err = pkt_set_type(pkt, PTYPE_DATA);
   if( err != PKT_OK)
+  {
+    printf("prepareToSend : set type\n");
     return 0;
+  }
   err = pkt_set_tr(pkt, 0);
   if( err != PKT_OK)
+  {
+    printf("prepareToSend : set tr\n");
     return 0;
+  }
   err = pkt_set_window(pkt, window);
   if( err != PKT_OK)
+  {
+    printf("prepareToSend : set window\n");
+    printf("window = %d\n", window);
     return 0;
+  }
   err = pkt_set_seqnum(pkt, seqnum);
   if( err != PKT_OK)
+  {
+    printf("prepareToSend : set seqnum\n");
     return 0;
+  }
   err = pkt_set_length(pkt, taillePayload);
   if( err != PKT_OK)
+  {
+    printf("prepareToSend : set length\n");
     return 0;
+  }
   err = pkt_set_timestamp(pkt, (uint32_t)time(NULL));
   if( err != PKT_OK)
+  {
+    printf("prepareToSend : set timestamp\n");
     return 0;
+  }
+
+  printf("prepareToSend : 2\n");
   uLong crc = crc32(0L, Z_NULL, 0);
-  char *data= NULL;
+  char *data = (char *)malloc(8);
   memcpy(data, pkt, 8);
+  printf("prepareToSend : 3\n");
+
   err = pkt_set_crc1(pkt, crc32(crc,(Bytef*) data, 8));
   if( err != PKT_OK)
+  {
+    printf("prepareToSend : set crc1\n");
     return 0;
+  }
 
   if( payload!=NULL && taillePayload!= 0)
   {
     err = pkt_set_payload(pkt, payload, taillePayload);
     if( err != PKT_OK)
+    {
+      printf("prepareToSend : set payload\n");
       return 0;
+    }
     err = pkt_set_crc2(pkt, crc32(crc, (Bytef*) payload, taillePayload));
     if( err != PKT_OK)
+    {
+      printf("prepareToSend : set crc2\n");
       return 0;
+    }
   }
 
+  printf("prepareToSend : 4\n");
+
   //rajoute pkt dans le buffer de reception
-  int nb = add(pkt, buf);
+  int nb = add(pkt, reception);
+  printf("prepareToSend : 5\n");
   if(nb != 0)
     return 0;
   window--;
@@ -212,7 +250,10 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *b
   int length = 528;
   
   // length-POST : nombre d'octets ecrits dans toSend
+
+  printf("prepareToSend : 6\n");
   err = pkt_encode(pkt, toSend, (size_t*) &length);
+  printf("prepareToSend : length = %d\n", length);
 
   return length;
 }
@@ -233,7 +274,7 @@ int envoieDonnes( int sfd, FILE* f){
   struct pollfd ufds[2];
   ufds[0].fd = sfd;
   ufds[0].events = POLLIN; // check for normal data
-  ufds[1].fd = sfd;
+  ufds[1].fd = file;
   ufds[1].events = POLLIN; // check for normal data
 
   // initialisation d'un buffer vide.
@@ -261,6 +302,7 @@ int envoieDonnes( int sfd, FILE* f){
       
       // traite la lecture
       if (ufds[0].revents & POLLIN) {
+        printf("envoieDonnes : il y a de quoi lire !\n");
         // receiver a recu un acquittement
         read(sfd, buf, sizeof buf); 
         checkReceive(buf, sizeof(buf), reception);
@@ -293,16 +335,24 @@ int envoieDonnes( int sfd, FILE* f){
 
       // traite l'ecriture
       if(ufds[1].revents & POLLIN && window_dest > 0)  {
+        printf("envoieDonnes : il y a de quoi écrire !\n");
         // receiver 
         memset((void*)payload, 0, 512); // make sure the struct is empty
 
+        printf("sender : écrire : 1\n");
+
         // lu : nombre de bytes qui ont été lues dans file ?
         int lu = read(file,payload, 512);
+        printf("sender : écrire : 2\n");
         int nombre = prepareToSend(payload, lu, buf, reception);
+        printf("sender : écrire : 3\n");
+        printf("nombre = %d\n", nombre);
 
         if( nombre != 0)
         {
+          printf("sender : écrire : 4\n");
           int sended = write(sfd,buf,nombre);
+          printf("sender : écrire : 5\n");
           if(sended != nombre){
             fprintf(stderr, "Erreur lors de l'envoi\n");
           }
