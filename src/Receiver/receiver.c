@@ -11,35 +11,48 @@
 #include "receiver.h"
 
 int main(int argc, char * argv[]) {
-  // Vérfication du nombre d'arguments. Doit être présent au miniimum :
-  // Nom programme + hostname + port
   if(argc < 3){
     fprintf(stderr, "Pas assez d'arguments, donnez au minimum hostname et port.\n");
     return EXIT_FAILURE;
   }
+  //int opt, file = -1;
   int opt = -1;
   FILE* file = NULL;
+
   // Recuperation des arguments
   while ((opt = getopt(argc, argv, "f:")) != -1) {
     switch (opt) {
-      case 'f':
-      file = fopen(optarg, "w");  // Ouvre le fichier, si il n'existe pas on essaye de le creer.
-      if(file == NULL){
-        fprintf(stderr, " Echec lors de l'utilisation de fopen.\n");
-        return EXIT_FAILURE;
-      }
-      break;
+        case 'f':
+          //FILE* temp = fopen(optarg, "w");
+          //if (temp == NULL){
+          file = fopen(optarg, "w");
+          if(file == NULL){
+            fprintf(stderr, " Echec lors de l'utilisation de fopen\n");
+            return EXIT_FAILURE;
+          }
+          //file = fileno(temp);  // Ouvre le fichier, si il n'existe pas on essaye de le creer.
+          // if(file == -1){
+          //   fprintf(stderr, " Echec lors de l'utilisation de fileno\n");
+          //   return EXIT_FAILURE;
+          // }
+          if(file == NULL){
+            fprintf(stderr, " Echec lors de l'utilisation de fopen.\n");
+            return EXIT_FAILURE;
+          }
+          break;
       default:
-      fprintf(stderr, "L'option -f nécessite un nom de fichier.\n" );
-      break;
+        fprintf(stderr, "L'option -f nécessite un nom de fichier.\n");
+        break;
     }
   }
 
   //QF: Les arguments arriveront tjs dans l'ordre hostname et puis port je suppose ?
+  // N : oui je crois
   // Récuperation des arguments non optionnels.
 
   char* host = argv[optind];
-  int port = atoi(argv[optind + 1]); // atoi
+  int port = atoi(argv[optind + 1]);
+  printf("Arguments bien recus\n");
 
   // Transformation de l'adresse en une adresse utilisable par le programme
   struct sockaddr_in6 addr;

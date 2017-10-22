@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Pas assez d'arguments, donnez au minimum hostname et port.\n");
     return EXIT_FAILURE;
   }
-  //int opt, file = -1; 
+  //int opt, file = -1;
   int opt = -1;
   FILE* file = NULL;
 
@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
   printf("sender : 1\n");
   char* host = argv[optind];
   int port = atoi(argv[optind + 1]);
+  printf("Arguments bien recus\n");
 
   // Transformation de l'adresse en une adresse utilisable par le programme
   struct sockaddr_in6 addr;
