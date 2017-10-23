@@ -13,7 +13,8 @@ packet_implem.o : src/FormatSegments/packet_interface.h src/FormatSegments/packe
 	gcc -c src/FormatSegments/packet_implem.c src/FormatSegments/packet_interface.h -Wall -Werror
 
 receiver : src/Receiver/receiver.c src/Receiver/receiver.h src/Receiver/receptionDonnes.c src/Receiver/receptionDonnes.h create_socket.o real_address.o wait_for_client.o packet_implem.o
-	gcc -o receiver src/Receiver/receiver.c src/Receiver/receptionDonnes.c create_socket.o real_address.o wait_for_client.o packet_implem.o -Wall -Werror -Wshadow -lz
+	gcc -o receiver src/Receiver/receiver.c src/Receiver/receptionDonnes.c create_socket.o real_address.o wait_for_client.o packet_implem.o -Wall -Werror -Wshadow -g -lz
 
 sender: src/Sender/sender.h src/Sender/sender.c src/Sender/envoieDonnes.h src/Sender/envoieDonnes.c  create_socket.o real_address.o wait_for_client.o packet_implem.o
-	gcc -o sender src/Sender/sender.h src/Sender/sender.c src/Sender/envoieDonnes.h src/Sender/envoieDonnes.c  create_socket.o real_address.o wait_for_client.o packet_implem.o -Wall -Werror -Wshadow -lz
+	gcc -o sender src/Sender/sender.h src/Sender/sender.c src/Sender/envoieDonnes.h src/Sender/envoieDonnes.c  create_socket.o real_address.o wait_for_client.o packet_implem.o -Wall -Werror -Wshadow -g -lz
+clear : rm sender receiver wait_for_client.o real_address.o packet_implem.o create_socket.o

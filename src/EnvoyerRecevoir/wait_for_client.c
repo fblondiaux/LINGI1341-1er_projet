@@ -30,7 +30,6 @@ int wait_for_client(int sfd){
 
     return -1;
   }
-  printf("wait for client [serveur]: on essaie de communiquer avec moi!\n");
 
   // connecter socket sfd ) l'adresse theiraddress
   if(connect(sfd, (struct sockaddr*)& theiraddress,(int) theirlength)== -1){

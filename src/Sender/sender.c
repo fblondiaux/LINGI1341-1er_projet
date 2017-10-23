@@ -28,16 +28,11 @@ int main(int argc, char *argv[]) {
         case 'f':
           //FILE* temp = fopen(optarg, "w");
           //if (temp == NULL){
-          file = fopen(optarg, "w");
+          file = fopen(optarg, "r");
           if(file == NULL){
             fprintf(stderr, " Echec lors de l'utilisation de fopen\n");
             return EXIT_FAILURE;
           }
-          //file = fileno(temp);  // Ouvre le fichier, si il n'existe pas on essaye de le creer.
-          // if(file == -1){
-          //   fprintf(stderr, " Echec lors de l'utilisation de fileno\n");
-          //   return EXIT_FAILURE;
-          // }
           if(file == NULL){
             fprintf(stderr, " Echec lors de l'utilisation de fopen.\n");
             return EXIT_FAILURE;
@@ -53,9 +48,9 @@ int main(int argc, char *argv[]) {
   // N : oui je crois
   // Récuperation des arguments non optionnels.
 
+  printf("sender : 1\n");
   char* host = argv[optind];
   int port = atoi(argv[optind + 1]);
-  printf("Arguments bien recus\n");
 
   // Transformation de l'adresse en une adresse utilisable par le programme
   struct sockaddr_in6 addr;
@@ -68,6 +63,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  printf("sender : 2\n");
   // Création du socket.
   int sfd = create_socket(NULL, -1, &addr, port);
   if(sfd == -1){
@@ -75,9 +71,10 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-
+  printf("sender : 3\n");
   envoieDonnes(sfd, file);
 
+  printf("sender : 4\n");
   if(file != NULL){
     fclose(file);
   }

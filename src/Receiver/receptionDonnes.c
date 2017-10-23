@@ -47,103 +47,91 @@ void insertStruct(struct buffer* str){
 }
 
 
-selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK,
-  int* SizeACK, int file){
-    pkt_t* reception = pkt_new();
-    pkt_status_code err = pkt_decode(buf, taille, reception);
+selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK,int* SizeACK, const int file){
+  pkt_t* reception = pkt_new();
+  pkt_status_code err = pkt_decode(buf, taille, reception);
 
-    if (err == E_TR && pkt_get_type(reception) == 1){
-      // On va devoir envoyer un NACK
-      pkt_t* ack = pkt_new(); // Préparation de la structure à encoder
-      pkt_set_type(ack, 3);
-      pkt_set_window(ack, window);
-      pkt_set_seqnum(ack,pkt_get_seqnum(reception));
-      pkt_set_length(ack,0);
-      pkt_set_timestamp(ack,pkt_get_timestamp(reception));
-
-      if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
-        fprintf(stderr, "Erreur lors de l'encodage du NACK, le packet est ignoré\n");
-        free(reception);
-        free(ack);
-        return INGNORE;
-      }
-
-      free(reception);
-      free(ack);
-      return S_NACK;
-
-    }
-    else if(err == PKT_OK){
-      // On doit envoyer un ACK et écrire ce qu'il y avait dans le payload.
-      int seqnum = pkt_get_seqnum(reception);
-      if( seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
-      pkt_del(reception);
-      return INGNORE;
-    }
-
-    // Creation et placement de la structure dans le buffer.
-    struct buffer* new = malloc(sizeof(struct buffer));
-    new->seqnum = seqnum;
-    new->data = reception;
-    insertStruct(new);
-    window--;
-    //Envoie du ack.
-    struct buffer* current = startBuffer;
-    char payloadTemp[512];
-    int size = 0;
-    while(startBuffer != NULL || startBuffer->seqnum == seqnumMin){
-      // Decalage de la fenêtre
-      seqnumMin = (seqnumMin +1) % 256;
-      seqnumMax = (seqnumMax +1)%256;
-      lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
-
-      size = pkt_get_length(current->data);
-      memcpy( payloadTemp,pkt_get_payload(current->data), size);
-      int ecrit = write(file, payloadTemp, size);
-      if(ecrit!=size){
-        fprintf(stderr, "Le segment à été reçu mais un problème à été rencontré lors de l'écriture de son payload\n");
-      }
-      startBuffer = startBuffer->next;
-      free(current->data);
-      free(current);
-      window ++; // ON a libere une place dans le buffer
-    }
-    // On a vide au maximum la structure donc on va envoyer le ack.
-    pkt_t* ack = pkt_new();
-    pkt_set_type(ack, 2);
+  if (err == E_TR && pkt_get_type(reception) == 1){
+    // On va devoir envoyer un NACK
+    pkt_t* ack = pkt_new(); // Préparation de la structure à encoder
+    pkt_set_type(ack, 3);
     pkt_set_window(ack, window);
-    pkt_set_seqnum(ack,seqnumMin);
+    pkt_set_seqnum(ack,pkt_get_seqnum(reception));
     pkt_set_length(ack,0);
-    pkt_set_timestamp(ack,lasttimestamp);
+    pkt_set_timestamp(ack,pkt_get_timestamp(reception));
+
     if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
-      free(reception);
-      free(ack);
+      fprintf(stderr, "Erreur lors de l'encodage du NACK, le packet est ignoré\n");
+      pkt_del(reception);
+      pkt_del(ack);
       return INGNORE;
     }
-
-    free(reception);
-    free(ack);
-    return S_ACK;
-
-
+    pkt_del(reception);
+    pkt_del(ack);
+    return S_NACK;
 
   }
-  else{
+  else if(err == PKT_OK){
+    // On doit envoyer un ACK et écrire ce qu'il y avait dans le payload.
+    int seqnum = pkt_get_seqnum(reception);
+    if (seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
     pkt_del(reception);
     return INGNORE;
+    }
+
+  // Creation et placement de la structure dans le buffer.
+  struct buffer* new = malloc(sizeof(struct buffer));
+  new->seqnum = seqnum;
+  new->data = reception;
+  insertStruct(new);
+  window--;
+  //Envoie du ack.
+  struct buffer* current = startBuffer;
+  char payloadTemp[512];
+  int size = 0;
+  while(startBuffer != NULL && startBuffer->seqnum == seqnumMin){
+    // Decalage de la fenêtre
+    seqnumMin = (seqnumMin +1) % 256;
+    seqnumMax = (seqnumMax +1)%256;
+    lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
+
+    size = pkt_get_length(current->data);
+    memcpy( payloadTemp,pkt_get_payload(current->data), size);
+    int ecrit = write(file, payloadTemp, size);
+    if(ecrit!=size){
+      fprintf(stderr, "Le segment à été reçu mais un problème à été rencontré lors de l'écriture de son payload\n");
+    }
+    startBuffer = startBuffer->next;
+    pkt_del(current->data);
+    free(current);
+    window ++; // ON a libere une place dans le buffer
   }
+  pkt_t* ack = pkt_new();
+  pkt_set_type(ack, 2);
+  pkt_set_window(ack, window);
+  pkt_set_seqnum(ack,seqnumMin);
+  pkt_set_length(ack,0);
+  pkt_set_timestamp(ack,lasttimestamp);
+  if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
+
+    pkt_del(ack);
+    return INGNORE;
+  }
+
+  pkt_del(ack);
+  return S_ACK;
+
+}
+else{
+  pkt_del(reception);
+  return INGNORE;
+}
 }
 
 
-void receptionDonnes(int sfd, FILE* f){
+void receptionDonnes(int sfd, int file){
   // Preparation
-  int file;
-  if(f == NULL){
-    file = STDIN_FILENO;
-  }
-  else{
-    file = fileno(f);
-  }
+
   char buf[528];
   char payload[512];
   int payloadSize = 512;
@@ -155,7 +143,6 @@ void receptionDonnes(int sfd, FILE* f){
   ufds[0].events = POLLIN; // check for normal data
   ufds[1].fd = sfd;
   ufds[1].events = POLLOUT;
-
   while(end == 0 ){
     // attend evenement pendant 10 sec
     int rv = poll(ufds, 2, 10000); // Faut-il changer cette valeur?
@@ -176,7 +163,12 @@ void receptionDonnes(int sfd, FILE* f){
         memset((void*)payload, 0, 512); // make sure the struct is empty
         payloadSize = 512;
         int recu = read(sfd, buf, sizeof buf); // receive normal data
+        if(recu == 0){
+          end = 1;
+        }
+        else{
         err = traitementRecu(buf, recu, payload, &payloadSize, file);
+        }
       }
       if(err != INGNORE && ufds[1].revents & POLLOUT){
         int sended = write(sfd,payload,payloadSize);
@@ -186,13 +178,6 @@ void receptionDonnes(int sfd, FILE* f){
       }
 
     }
-    if(f == NULL){
-      end = feof(stdin);
-    }
-    else{
 
-      end = feof(f);
-    }
   }
-
 }

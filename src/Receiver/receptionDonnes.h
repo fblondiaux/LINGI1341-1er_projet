@@ -34,6 +34,6 @@ void insertStruct(struct buffer* str);
 * Retourne si le segment est ignoré ou si il faut renvoyer un ack/nack
 */
 selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK,
-  int* SizeACK, int file);
+  int* SizeACK, const int file);
 
-void receptionDonnes( int sfd, FILE* f);
+void receptionDonnes( int sfd, int file);
