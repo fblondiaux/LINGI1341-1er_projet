@@ -93,9 +93,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	}
 	
 	memcpy(pkt, data, 12); // copie des 12 prem bytes (en network BO) (jusqu'a crc1 y compris)
-	printf("decode : dans buffer reçu (mis en packt): \n");
-	printf("decode : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
-
+	
 
 	// Préparation pour la vérification de crc1
 	if(pkt_get_tr(pkt) == 1 )
@@ -109,6 +107,8 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	if(pkt_set_crc1(pkt,ntohl(pkt_get_crc1(pkt))) != PKT_OK){ // On met le crc1 en host byte order
 		return err;
 	}
+	printf("decode : dans buffer reçu (mis en packt, en host): \n");
+	printf("decode : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
 
 	fprintf(stderr, "decode : crc1 mis dans packet (en host): %u\n", pkt_get_crc1(pkt) );
 	fprintf(stderr, "decode : calcule crc1 (des donnees en host): %lu\n",crc32(crc,(Bytef*) data, 8 ) );
