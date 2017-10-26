@@ -96,13 +96,13 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	// Préparation pour la vérification de crc1
 	if(pkt_get_tr(pkt) == 1 )
 	{
+
 		return E_TR;
 	}
 
 
 	if(crc32(crc,(Bytef*) data, 8) != pkt_get_crc1(pkt) )
 	{
-		fprintf(stderr, "Crc1 \n");
 		return E_CRC;
 	}
 	// Verification length
@@ -126,7 +126,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 
 
 		if( crc32(crc, (Bytef *) data+12, taille_payl) != crc2){ // verifie que le payload a la bonne valeur du crc2
-			fprintf(stderr, "Crc2 \n");
+
 			return E_CRC;
 		}
 		err = pkt_set_payload(pkt,data+12, taille_payl);
@@ -143,18 +143,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 }
 
 
-/*
- * Encode une struct pkt dans un buffer, prÃªt a Ãªtre envoye sur le reseau
- * (c-a-d en network byte-order), incluant le CRC32 du header et
- * eventuellement le CRC32 du payload si celui-ci est non nul.
- *
- * @pkt: La structure a encoder
- * @buf: Le buffer dans lequel la structure sera encodee
- * @len: La taille disponible dans le buffer
- * @len-POST: Le nombre de d'octets ecrit dans le buffer
- * @return: Un code indiquant si l'operation a reussi ou E_NOMEM si
- *         le buffer est trop petit.
- */
+
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
 	int count = 0;
@@ -170,14 +159,18 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 			return E_NOMEM;
 	}
 
+
 	if(pkt_get_length(pkt) != 0 && *(len) < (size_t) (pkt_get_length(pkt))+4+12 ) // si payload du pkt non nul, il faut verifier qu'il y a assez de place dans buf
 	{
 		return E_NOMEM;
 	}
 
+
+	///
 	memcpy(buf, pkt, 8); // copie de window,tr,type, length, timestamp
 	pkt_t* temp = (pkt_t *) malloc(8);
 	if(temp == NULL){
+
 
 			return E_NOMEM;
 	}
@@ -185,15 +178,12 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	memcpy(temp, pkt, 8);
 	temp->trFlag = 0;
 	count = 8;
-	char* buftemp = (char *) malloc(8);
-	if(buftemp == NULL){
-		return E_NOMEM;
-	}
+	char buftemp[8];
 
 	memcpy(buftemp, temp ,8); // copie de window,tr=0,type, seqnum, length, timestamp
 
 	uLong crc = crc32(0L, Z_NULL, 0);
-	uLong crc1 = crc32(crc,(Bytef*) temp, count);
+	uLong crc1 = crc32(crc,(Bytef*) buftemp, count);
 	crc1 = htonl(crc1);
 	memcpy(buf+count, &crc1, 4);
 	count +=4;
@@ -209,7 +199,6 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	}
 	*len = count;
 	free(temp);
-	free(buftemp);
 
 	return PKT_OK;
 }
@@ -329,7 +318,7 @@ pkt_status_code pkt_set_seqnum(pkt_t *pkt, const uint8_t seqnum)
 
 pkt_status_code pkt_set_length(pkt_t *pkt, const uint16_t length)
 {
-	if(length >= 512)
+	if(length > 512)
 	return E_LENGTH;
 
 	pkt->length = htons(length);
@@ -409,5 +398,3 @@ pkt_status_code pkt_set_payload(pkt_t *pkt, const char *data, const uint16_t len
 	}
 	return E_UNCONSISTENT;
 }
-//fin
-//suite à faire

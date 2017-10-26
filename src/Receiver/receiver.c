@@ -17,7 +17,7 @@ int main(int argc, char * argv[]) {
   }
   //int opt, file = -1;
   int opt = -1;
-  FILE* file = NULL;
+  FILE* fileF = NULL;
 
   // Recuperation des arguments
   while ((opt = getopt(argc, argv, "f:")) != -1) {
@@ -25,18 +25,9 @@ int main(int argc, char * argv[]) {
         case 'f':
           //FILE* temp = fopen(optarg, "w");
           //if (temp == NULL){
-          file = fopen(optarg, "w");
-          if(file == NULL){
+          fileF = fopen(optarg, "w+");
+          if(fileF == NULL){
             fprintf(stderr, " Echec lors de l'utilisation de fopen\n");
-            return EXIT_FAILURE;
-          }
-          //file = fileno(temp);  // Ouvre le fichier, si il n'existe pas on essaye de le creer.
-          // if(file == -1){
-          //   fprintf(stderr, " Echec lors de l'utilisation de fileno\n");
-          //   return EXIT_FAILURE;
-          // }
-          if(file == NULL){
-            fprintf(stderr, " Echec lors de l'utilisation de fopen.\n");
             return EXIT_FAILURE;
           }
           break;
@@ -52,15 +43,20 @@ int main(int argc, char * argv[]) {
 
   char* host = argv[optind];
   int port = atoi(argv[optind + 1]);
-  printf("Arguments bien recus\n");
-
+  int file =0;
+  if(fileF == NULL){
+    file = STDIN_FILENO;
+  }
+  else{
+    file = fileno(fileF);
+  }
   // Transformation de l'adresse en une adresse utilisable par le programme
   struct sockaddr_in6 addr;
   const char *err = real_address(host, &addr);
   if (err) {
     fprintf(stderr, "Could not resolve hostname %s: %s\n", host, err);
-    if(file != NULL){
-      fclose(file);
+    if(file != STDIN_FILENO){
+      close(file);
     }
     return EXIT_FAILURE;
   }
@@ -74,8 +70,8 @@ int main(int argc, char * argv[]) {
   if (wait_for_client(sfd) < 0){ /* Connected */
     fprintf(stderr,
       "Could not connect the socket after the first message.\n");
-      if(file != NULL){
-        fclose(file);
+      if(file != STDIN_FILENO){
+        close(file);
       }
       close(sfd);
       return EXIT_FAILURE;
@@ -83,8 +79,8 @@ int main(int argc, char * argv[]) {
 
     receptionDonnes(sfd, file);
 
-    if(file != NULL){
-      fclose(file);
+    if(file != STDIN_FILENO){
+      close(file);
     }
 
     close(sfd);

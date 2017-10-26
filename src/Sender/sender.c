@@ -28,16 +28,11 @@ int main(int argc, char *argv[]) {
         case 'f':
           //FILE* temp = fopen(optarg, "w");
           //if (temp == NULL){
-          file = fopen(optarg, "w");
+          file = fopen(optarg, "r");
           if(file == NULL){
             fprintf(stderr, " Echec lors de l'utilisation de fopen\n");
             return EXIT_FAILURE;
           }
-          //file = fileno(temp);  // Ouvre le fichier, si il n'existe pas on essaye de le creer.
-          // if(file == -1){
-          //   fprintf(stderr, " Echec lors de l'utilisation de fileno\n");
-          //   return EXIT_FAILURE;
-          // }
           if(file == NULL){
             fprintf(stderr, " Echec lors de l'utilisation de fopen.\n");
             return EXIT_FAILURE;
@@ -56,7 +51,6 @@ int main(int argc, char *argv[]) {
   printf("sender : 1\n");
   char* host = argv[optind];
   int port = atoi(argv[optind + 1]);
-  printf("Arguments bien recus\n");
 
   // Transformation de l'adresse en une adresse utilisable par le programme
   struct sockaddr_in6 addr;
