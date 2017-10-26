@@ -45,22 +45,9 @@ int add(pkt_t *pkt, struct head *buf)
   {
     ptr = ptr->next;
   }
-<<<<<<< HEAD
-  printf("add : 1\n");
-  struct node *elem = (struct node*)malloc(sizeof(struct node));
-  if(elem == NULL)
-    return -1;
-  printf("add : 2\n");
-  elem->pkt = pkt;
-  elem->next = NULL;
-  printf("add : 3\n");
-  ptr->next = elem;
-  printf("add : 4\n");
-=======
   //printf("add : 3\n");
   ptr->next = elem;
   //printf("add : 4\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
   return 0;
 }
 
@@ -135,6 +122,8 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
     fprintf(stderr, "erreur dans décodage\n");
     return -1;
   }
+  printf("Sender a décodé les données -> packet\n");
+
 
   // verifier type  et tr du packet recu
   ptypes_t type = pkt_get_type(pkt);
@@ -174,6 +163,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   // packet d'acquittement
   if(type == PTYPE_ACK)
   {
+    printft("Sender : il s'agit d'un acquittement\n");
     //printf("checkReceive : 2\n");
 
     //mettre à jour la valeur de window_dest, window, min et max :
@@ -205,6 +195,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   // on choisit d'ignorer le packet. Le time-out s'occupera de renvoyer le packet qui a été reçu tronqué.
   if(type == PTYPE_NACK)
   {
+    printf("Il s'agit d'un packet de non-acquittement\n");
     // renvoyer packet
     return 0;
   }
@@ -217,79 +208,43 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
   pkt_status_code err;
   pkt_t *pkt = pkt_new();
 
-<<<<<<< HEAD
-  printf("prepareToSend : 1\n");
-=======
   //printf("prepareToSend : 1\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
   // on insere les donnees dans le pkt
   err = pkt_set_type(pkt, PTYPE_DATA);
   if( err != PKT_OK)
   {
-<<<<<<< HEAD
-    printf("prepareToSend : set type\n");
-=======
     //printf("prepareToSend : set type\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
     return 0;
   }
   err = pkt_set_tr(pkt, 0);
   if( err != PKT_OK)
   {
-<<<<<<< HEAD
-    printf("prepareToSend : set tr\n");
-=======
     //printf("prepareToSend : set tr\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
     return 0;
   }
   err = pkt_set_window(pkt, window);
   if( err != PKT_OK)
   {
-<<<<<<< HEAD
-    printf("prepareToSend : set window\n");
-    printf("window = %d\n", window);
-=======
     //printf("prepareToSend : set window\n");
     //printf("window = %d\n", window);
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
     return 0;
   }
   err = pkt_set_seqnum(pkt, seqnum);
   //printf("prepareToSend : on met seqnum = %d\n", seqnum);
   if( err != PKT_OK)
   {
-<<<<<<< HEAD
-    printf("prepareToSend : set seqnum\n");
-=======
    //printf("prepareToSend : set seqnum\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
     return 0;
   }
   err = pkt_set_length(pkt, taillePayload);
   if( err != PKT_OK)
   {
-<<<<<<< HEAD
-    printf("prepareToSend : set length\n");
-=======
     //printf("prepareToSend : set length\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
     return 0;
   }
   err = pkt_set_timestamp(pkt, (uint32_t)time(NULL));
   if( err != PKT_OK)
   {
-<<<<<<< HEAD
-    printf("prepareToSend : set timestamp\n");
-    return 0;
-  }
-
-  printf("prepareToSend : 2\n");
-  uLong crc = crc32(0L, Z_NULL, 0);
-  char *data = (char *)malloc(8);
-  memcpy(data, pkt, 8);
-  printf("prepareToSend : 3\n");
-=======
     //printf("prepareToSend : set timestamp\n");
     return 0;
   }
@@ -299,16 +254,11 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
   char *data = (char *)malloc(8);
   memcpy(data, pkt, 8);
   //printf("prepareToSend : 3\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
 
   err = pkt_set_crc1(pkt, crc32(crc,(Bytef*) data, 8));
   if( err != PKT_OK)
   {
-<<<<<<< HEAD
-    printf("prepareToSend : set crc1\n");
-=======
     //printf("prepareToSend : set crc1\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
     return 0;
   }
 
@@ -317,38 +267,22 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
     err = pkt_set_payload(pkt, payload, taillePayload);
     if( err != PKT_OK)
     {
-<<<<<<< HEAD
-      printf("prepareToSend : set payload\n");
-=======
       //printf("prepareToSend : set payload  %d\n",err);
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
       return 0;
     }
     err = pkt_set_crc2(pkt, crc32(crc, (Bytef*) payload, taillePayload));
     if( err != PKT_OK)
     {
-<<<<<<< HEAD
-      printf("prepareToSend : set crc2\n");
-=======
       //printf("prepareToSend : set crc2\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
       return 0;
     }
   }
 
-<<<<<<< HEAD
-  printf("prepareToSend : 4\n");
-
-  //rajoute pkt dans le buffer de reception
-  int nb = add(pkt, reception);
-  printf("prepareToSend : 5\n");
-=======
   //printf("prepareToSend : 4\n");
 
   //rajoute pkt dans le buffer de reception
   int nb = add(pkt, reception);
   //printf("prepareToSend : 5\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
   if(nb != 0)
     return 0;
   window--;
@@ -360,15 +294,9 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
 
   // length-POST : nombre d'octets ecrits dans toSend
 
-<<<<<<< HEAD
-  printf("prepareToSend : 6\n");
-  err = pkt_encode(pkt, toSend, (size_t*) &length);
-  printf("prepareToSend : length = %d\n", length);
-=======
   //printf("prepareToSend : 6\n");
   err = pkt_encode(pkt, toSend, (size_t*) &length);
   //printf("prepareToSend : length = %d\n", length);
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
 
   return length;
 }
@@ -419,11 +347,7 @@ int envoieDonnes( int sfd, FILE* f){
 
       // traite la lecture
       if (ufds[0].revents & POLLIN) {
-<<<<<<< HEAD
-        printf("envoieDonnes : il y a de quoi lire !\n");
-=======
-        //printf("envoieDonnes : il y a de quoi lire !\n");
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
+        printf("Sender : il y a de quoi lire !\n");
         // receiver a recu un acquittement
         int lu = read(sfd, buf, sizeof buf);
 
@@ -467,35 +391,13 @@ int envoieDonnes( int sfd, FILE* f){
       }
 
       // traite l'ecriture
-<<<<<<< HEAD
-      if(ufds[1].revents & POLLIN && window_dest > 0)  {
-        printf("envoieDonnes : il y a de quoi écrire !\n");
-        // receiver 
-=======
       if(ufds[1].revents & POLLIN && window_dest > 0 && window > 0 && attendre == 0)  { //--------------------------------------
         //printf("envoieDonnes : il y a de quoi écrire !\n");
         // receiver
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
         memset((void*)payload, 0, 512); // make sure the struct is empty
-
-        printf("sender : écrire : 1\n");
 
         // lu : nombre de bytes qui ont été lues dans file ?
         int lu = read(file,payload, 512);
-<<<<<<< HEAD
-        printf("sender : écrire : 2\n");
-        int nombre = prepareToSend(payload, lu, buf, reception);
-        printf("sender : écrire : 3\n");
-        printf("nombre = %d\n", nombre);
-
-        if( nombre != 0)
-        {
-          printf("sender : écrire : 4\n");
-          int sended = write(sfd,buf,nombre);
-          printf("sender : écrire : 5\n");
-          if(sended != nombre){
-            fprintf(stderr, "Erreur lors de l'envoi\n");
-=======
         if( lu == 0)
         {
           //printf("J'ai vu que lu == 0\n");
@@ -524,7 +426,6 @@ int envoieDonnes( int sfd, FILE* f){
             //printf("seqnum = %d\n", seqnum);
             window_dest--;
             window--;
->>>>>>> 0cbd2bcab98228b72f7cb613f22e31c641df1f6b
           }
         }
       }
