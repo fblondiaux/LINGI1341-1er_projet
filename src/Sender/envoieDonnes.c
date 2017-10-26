@@ -163,7 +163,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   // packet d'acquittement
   if(type == PTYPE_ACK)
   {
-    printft("Sender : il s'agit d'un acquittement\n");
+    printf("Sender : il s'agit d'un acquittement\n");
     //printf("checkReceive : 2\n");
 
     //mettre à jour la valeur de window_dest, window, min et max :
