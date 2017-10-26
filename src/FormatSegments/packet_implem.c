@@ -93,7 +93,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	}
 	
 	memcpy(pkt, data, 12); // copie des 12 prem bytes (en network BO) (jusqu'a crc1 y compris)
-	printft("decode : dans buffer reçu (mis en packt): \n");
+	printf("decode : dans buffer reçu (mis en packt): \n");
 	printf("decode : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
 
 
