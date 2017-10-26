@@ -91,8 +91,11 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 			return E_UNCONSISTENT;
 		}
 	}
-
+	
 	memcpy(pkt, data, 12); // copie des 12 prem bytes (en network BO) (jusqu'a crc1 y compris)
+	printft("decode : dans buffer reçu (mis en packt): \n");
+	printf("decode : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
+
 
 	// Préparation pour la vérification de crc1
 	if(pkt_get_tr(pkt) == 1 )
@@ -172,6 +175,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	{
 		return E_NOMEM;
 	}
+	printf("encode : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
 
 
 	//// chmgt
