@@ -122,7 +122,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
     fprintf(stderr, "erreur dans décodage\n");
     return -1;
   }
-  printf("Sender a décodé les données -> packet\n");
+  //printf("Sender a décodé les données -> packet\n");
 
 
   // verifier type  et tr du packet recu
@@ -163,7 +163,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   // packet d'acquittement
   if(type == PTYPE_ACK)
   {
-    printf("Sender : il s'agit d'un acquittement\n");
+    //printf("Sender : il s'agit d'un acquittement\n");
     //printf("checkReceive : 2\n");
 
     //mettre à jour la valeur de window_dest, window, min et max :
@@ -195,7 +195,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   // on choisit d'ignorer le packet. Le time-out s'occupera de renvoyer le packet qui a été reçu tronqué.
   if(type == PTYPE_NACK)
   {
-    printf("Il s'agit d'un packet de non-acquittement\n");
+    //printf("Il s'agit d'un packet de non-acquittement\n");
     // renvoyer packet
     return 0;
   }
@@ -347,7 +347,7 @@ int envoieDonnes( int sfd, FILE* f){
 
       // traite la lecture
       if (ufds[0].revents & POLLIN) {
-        printf("Sender : il y a de quoi lire !\n");
+        //printf("Sender : il y a de quoi lire !\n");
         // receiver a recu un acquittement
         int lu = read(sfd, buf, sizeof buf);
 

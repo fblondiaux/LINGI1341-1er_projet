@@ -47,7 +47,7 @@ void insertStruct(struct buffer* str){
 }
 
 
-selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK,int* SizeACK, const int file){
+selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, size_t* SizeACK, const int file){
   pkt_t* reception = pkt_new();
   pkt_status_code err = pkt_decode(buf, taille, reception);
 
@@ -134,7 +134,7 @@ void receptionDonnes(int sfd, int file){
 
   char buf[528];
   char payload[512];
-  int payloadSize = 512;
+  size_t payloadSize = 512;
   selectiveRepeat_status_code err= 0;
 
   int end = 0;

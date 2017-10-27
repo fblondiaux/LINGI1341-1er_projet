@@ -73,7 +73,7 @@ void pkt_del(pkt_t *pkt)
 */
 pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 {
-
+//printf("%x\n", data[0]);
 
 	uLong crc = crc32(0L, Z_NULL, 0);
 	int taille_payl = 0;
@@ -91,9 +91,9 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 			return E_UNCONSISTENT;
 		}
 	}
-	
+
 	memcpy(pkt, data, 12); // copie des 12 prem bytes (en network BO) (jusqu'a crc1 y compris)
-	
+
 
 	// Préparation pour la vérification de crc1
 	if(pkt_get_tr(pkt) == 1 )
@@ -107,12 +107,12 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	if(pkt_set_crc1(pkt,ntohl(pkt_get_crc1(pkt))) != PKT_OK){ // On met le crc1 en host byte order
 		return err;
 	}
-	printf("decode : dans buffer reçu (mis en packt, en host): \n");
-	printf("decode : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
+	//printf("decode : dans buffer reçu (mis en packt, en host): \n");
+	printf("decode : mis dans pkt: type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
 
-	fprintf(stderr, "decode : crc1 mis dans packet (en host): %u\n", pkt_get_crc1(pkt) );
-	fprintf(stderr, "decode : calcule crc1 (des donnees en host): %lu\n",crc32(crc,(Bytef*) data, 8 ) );
-	
+	//fprintf(stderr, "decode : crc1 mis dans packet (en host): %u\n", pkt_get_crc1(pkt) );
+	//fprintf(stderr, "decode : calcule crc1 (des donnees en host): %lu\n",crc32(crc,(Bytef*) data, 8 ) );
+
 	if(crc32(crc,(Bytef*) data, 8 ) != pkt_get_crc1(pkt) )
 	{
 		fprintf(stderr, "Le crc1 calculé n'est pas le meme que celui qui a été reçu\n");
@@ -175,12 +175,14 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	{
 		return E_NOMEM;
 	}
-	printf("encode : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
+	printf("encode : dans packet : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
+
 
 
 	//// chmgt
 
 	memcpy(buf, pkt, 2); // memcpy de wind, ty, type et seqnum
+	//printf("Yoloo %x\n",(uint8_t)buf[0]);
 	count = count+2;
 	uint16_t l =  htons(pkt_get_length(pkt));
 	memcpy(buf+count,& l, 2); // copie de length en network byte order
@@ -190,27 +192,28 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	memcpy(buf+count,&t, 4);
 	count = count +4;
 
-	pkt_t *temp = (pkt_t *)malloc(sizeof(pkt_t));
-	// copie de char* buf à pkt_t temp pour mettre tr à 0
-	memcpy(temp, buf, 8);
-	pkt_set_tr(temp, 0);
-
 	char buftemp[8];
 	// copie du packet avec tr=0 dans un char*
-	memcpy(buftemp, temp, 8);
+	memcpy(buftemp, buf, 8);
+	pkt_t *temp = (pkt_t *)buftemp;
+	// copie de char* buf à pkt_t temp pour mettre tr à 0
+	if(pkt_set_tr(temp, 0) != PKT_OK){
+		return E_TR;
+	}
+
 
 	uLong crc = crc32(0L, Z_NULL, 0);
 	//calcul du crc1 du packet en network
 	uLong crc1 = crc32(crc,(Bytef*) buftemp, count);
 
 	//fprintf(stderr, "Encoder : crc1 qu'il y avait dans packet: %u\n", pkt_get_crc1(pkt));
-	fprintf(stderr, "Encoder : calcul crc1 en host: %lu\n",crc32(crc,(Bytef*) buftemp, count ) );
+	//fprintf(stderr, "Encoder : calcul crc1 en host: %lu\n",crc32(crc,(Bytef*) buftemp, count ) );
 	// crc1 [host] --> crc1[network]
 	crc1 = htonl(crc1);
-	fprintf(stderr, "Encoder : conversion crc1 en network (pour le mettre dans buffer): %lu\n",crc1);
+	//fprintf(stderr, "Encoder : conversion crc1 en network (pour le mettre dans buffer): %lu\n",crc1);
 
 	// mise crc1 en network byte order dans pkt
-	memcpy(buf+count, &crc1, 4);
+	memcpy(buf+count, &crc1, 4*sizeof(char));
 	count = count+4;
 	if (pkt_get_length(pkt) != 0)
 	{
@@ -221,9 +224,14 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 		crc2 = htonl(crc2);
 		memcpy(buf+count, &crc2, 4);
 		count = count+4;
+
+
 	}
+
+
 	*len = count;
-	free(temp);
+
+	//printf("%x\n",(uint8_t)buf[0]);
 	return PKT_OK;
 }
 
