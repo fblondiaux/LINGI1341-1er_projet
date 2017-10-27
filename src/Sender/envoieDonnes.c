@@ -167,16 +167,22 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
     //printf("checkReceive : 2\n");
 
     //mettre à jour la valeur de window_dest, window, min et max :
+
     window_dest = pkt_get_window(pkt);
-    //printf("checkReceive : 3\n");
+    /*
     int n = seqnum - min;
-    //printf("checkReceive : 4\n");
-    window = window +n;
-    //printf("checkReceive : 5\n");
+    window = window +n; */
+
+    if(pkt_get_seqnum(pkt) > min){
+      window = window +(pkt_get_seqnum(pkt)-min);
+      printf("window = %d\n", window);
+    }
+    else{
+      window = 32 - min + pkt_get_seqnum(pkt);
+      printf("window = %d\n", window);
+    }
     min = (pkt_get_seqnum(pkt)%256);
-    //printf("checkReceive : 6\n");
     max = ((min+31)%256);
-    //printf("checkReceive : 7\n");
 
     pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)-1);
 
@@ -285,7 +291,7 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
   //printf("prepareToSend : 5\n");
   if(nb != 0)
     return 0;
-  window--;
+  //window--;
 
 
 

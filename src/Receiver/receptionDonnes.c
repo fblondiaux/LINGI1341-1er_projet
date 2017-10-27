@@ -71,6 +71,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     return S_NACK;
 
   }
+
   else if(err == PKT_OK){
     // On doit envoyer un ACK et écrire ce qu'il y avait dans le payload.
     int seqnum = pkt_get_seqnum(reception);
