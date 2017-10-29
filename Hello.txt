@@ -1,0 +1,4 @@
+Hello
+
+./receiver ::1 1234 > tests/output.txt &
+./sender ::1 1234 < tests/input.txt
