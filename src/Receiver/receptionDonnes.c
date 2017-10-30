@@ -75,10 +75,21 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
   else if(err == PKT_OK){
     // On doit envoyer un ACK et écrire ce qu'il y avait dans le payload.
     int seqnum = pkt_get_seqnum(reception);
-    if (seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
-    pkt_del(reception);
-    return INGNORE;
+    if(seqnumMin < seqnumMax){
+      if (seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
+      pkt_del(reception);
+      fprintf(stderr, "J'ai déja reçu le sequnum %d, j'ignore\n", seqnum );
+      return INGNORE;
+      }
     }
+    if(seqnumMax < seqnumMin){
+      if (seqnum > seqnumMax && seqnum < seqnumMin){ // En dehors de ce que l'on peux recevoir.
+      pkt_del(reception);
+      fprintf(stderr, "J'ai déja reçu le sequnum %d, j'ignore\n", seqnum );
+      return INGNORE;
+      }
+    }
+
 
   // Creation et placement de la structure dans le buffer.
   struct buffer* new = malloc(sizeof(struct buffer));
@@ -94,6 +105,9 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     // Decalage de la fenêtre
     seqnumMin = (seqnumMin +1) % 256;
     seqnumMax = (seqnumMax +1)%256;
+
+    fprintf(stderr, "Mes numeros de sequnums, mis à jours sont min %d, max %d\n", seqnumMin , seqnumMax );
+
     lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
 
     size = pkt_get_length(current->data);
@@ -133,6 +147,7 @@ else{
 void receptionDonnes(int sfd, int file){
   // Preparation
 
+  fprintf(stderr, "AVANT DE COMMENCER min %d, max %d\n", seqnumMin , seqnumMax );
   char buf[528];
   char payload[512];
   size_t payloadSize = 512;
@@ -169,6 +184,7 @@ void receptionDonnes(int sfd, int file){
         }
         else{
         err = traitementRecu(buf, recu, payload, &payloadSize, file);
+        fprintf(stderr, "Mes numeros de sequnums après l'envoie du ack sont min %d, max %d\n", seqnumMin , seqnumMax );
         }
       }
       if(err != INGNORE && ufds[1].revents & POLLOUT){

@@ -60,42 +60,46 @@ int add(pkt_t *pkt, struct head *buf)
 int del(pkt_t *pkt, struct head *reception)
 {
   uint8_t seq = pkt_get_seqnum(pkt);
-  //printf("del : pkt_get_seqnum(pkt) = %d\n", seq);
-  //printf("del : 1\n");
   struct node *ptr = reception->liste;
-  //printf("del : 2\n");
 
+  while( pkt_get_seqnum(ptr->pkt) != seq)
+  {
+    reception->liste = ptr->next;
+    pkt_del(ptr->pkt);
+    ptr = ptr->next;
+    if(ptr== NULL)
+    {
+      return -1; // ne l'a pas trouvé et a supprimé toute la liste chainée...
+    }
+  }
+  reception->liste = ptr->next;
+  pkt_del(ptr->pkt);
+  free(ptr);
+  return 0;
 
+/*
   //premier node a supprimer?
   if( pkt_get_seqnum(ptr->pkt) == seq)
   {
-    //printf("del : 3\n");
     reception->liste = ptr->next;
-    //printf("del : 4\n");
     pkt_del(ptr->pkt);
-    //printf("del : 5\n");
     free(ptr);
-    //printf("del : 6\n");
     return 0;
   }
   else
   {
-    //printf("del : 7\n");
     if( ptr->next == NULL)
     {
       return -1;
-    }
-    //printf("del : 8\n");
+    };
     // jusqu'a max l'avant dernier
     while( pkt_get_seqnum((ptr->next)->pkt) != seq  && (ptr->next)->next != NULL)
     {
       ptr = ptr->next;
     }
-    //printf("del : 9\n");
 
     if(pkt_get_seqnum((ptr->next)->pkt) == seq)
     {
-      //printf("del : 10\n");
       struct node *node_del = ptr->next;
       ptr->next = (ptr->next)->next;
       pkt_del(node_del->pkt);
@@ -105,6 +109,10 @@ int del(pkt_t *pkt, struct head *reception)
   }
   // ne l'a pas trouve
   return -1;
+  */
+
+
+
 }
 
 /*
@@ -191,6 +199,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
     if (ret!= 0)
     {
       fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
+      fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
       return -1;
     }
     //printf("sender : le ACK a été traité !\n");
@@ -377,6 +386,7 @@ int envoieDonnes( int sfd, FILE* f){
         //timeout
         if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+5))
         {
+          printf("timeout --> on réenvoie les données\n");
           //printf("sender retransmission d'un packer\n");
           pkt_status_code err = pkt_set_timestamp(ptr->pkt, (uint32_t)time(NULL));
           if( err == PKT_OK)
@@ -428,7 +438,16 @@ int envoieDonnes( int sfd, FILE* f){
             if(sended != nombre){
               fprintf(stderr, "Erreur lors de l'envoi\n");
             }
+            if( seqnum == 254)
+            {
+              printf("seqnum = 254\n");
+              printf(" (seqnum+1)mod 256 = %d\n", (seqnum+1)%256);
+            }
             seqnum = ((seqnum+1)%256);
+
+
+
+
             //printf("seqnum = %d\n", seqnum);
             window_dest--;
             window--;
