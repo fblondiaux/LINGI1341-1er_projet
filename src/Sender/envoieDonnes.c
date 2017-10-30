@@ -183,11 +183,15 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
 
     if(pkt_get_seqnum(pkt) > min){
       window = window +(pkt_get_seqnum(pkt)-min);
-      printf("window = %d\n", window);
+      printf("(1) window = %d\n", window);
     }
     else{
-      window = 32 - min + pkt_get_seqnum(pkt);
-      printf("window = %d\n", window);
+      //window = 32 - min + pkt_get_seqnum(pkt);
+      window = window + 256 - min + pkt_get_seqnum(pkt);
+      printf("min = %d\n", min);
+      printf("max = %d\n", max);
+      printf(" pkt_get_seqnum(pkt) = %d\n", pkt_get_seqnum(pkt));
+      printf("(2) window= %d\n", window);
     }
     min = (pkt_get_seqnum(pkt)%256);
     max = ((min+31)%256);
@@ -371,6 +375,7 @@ int envoieDonnes( int sfd, FILE* f){
         // tous les éléments du fichier ont été envoyés et tous les ack ont été reçus
         if(reception->liste == NULL && attendre ==1)
         {
+          printf("sender : tous les elems du fichiers ont été envoyés, tous les acks ont été reçus\n");
           int sended = write(sfd,buf,0);
           if(sended != 0){
             fprintf(stderr, "Erreur lors de l'envoi\n");
@@ -416,7 +421,7 @@ int envoieDonnes( int sfd, FILE* f){
         int lu = read(file,payload, 512);
         if( lu == 0)
         {
-          //printf("J'ai vu que lu == 0\n");
+          printf("J'ai vu que lu == 0\n");
           attendre = 1;
           if(reception->liste == NULL){
             int sended = write(sfd,buf,0);
@@ -443,6 +448,7 @@ int envoieDonnes( int sfd, FILE* f){
               printf("seqnum = 254\n");
               printf(" (seqnum+1)mod 256 = %d\n", (seqnum+1)%256);
             }
+            printf("seqnum = %d (sender, après avoir écrit, avant d'incrémenter seqnum)\n", seqnum);
             seqnum = ((seqnum+1)%256);
 
 
