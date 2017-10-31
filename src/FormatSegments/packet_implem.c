@@ -389,7 +389,7 @@ pkt_status_code pkt_set_window(pkt_t *pkt, const uint8_t window)
 
 pkt_status_code pkt_set_seqnum(pkt_t *pkt, const uint8_t seqnum)
 {
-	if( seqnum >= 255)
+	if( seqnum > 255) // DEBUG : pas >= !!!!!!!
 	return E_SEQNUM;
 
 	if(pkt->type==PTYPE_DATA || pkt->type==PTYPE_NACK || pkt->type==PTYPE_ACK)

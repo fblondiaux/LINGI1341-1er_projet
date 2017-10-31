@@ -106,7 +106,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     seqnumMin = (seqnumMin +1) % 256;
     seqnumMax = (seqnumMax +1)%256;
 
-    fprintf(stderr, "Mes numeros de sequnums, mis à jours sont min %d, max %d\n", seqnumMin , seqnumMax );
+    //fprintf(stderr, "Mes numeros de sequnums, mis à jours sont min %d, max %d\n", seqnumMin , seqnumMax );
 
     lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
 
@@ -147,7 +147,7 @@ else{
 void receptionDonnes(int sfd, int file){
   // Preparation
 
-  fprintf(stderr, "AVANT DE COMMENCER min %d, max %d\n", seqnumMin , seqnumMax );
+  //fprintf(stderr, "AVANT DE COMMENCER min %d, max %d\n", seqnumMin , seqnumMax );
   char buf[528];
   char payload[512];
   size_t payloadSize = 512;
@@ -184,13 +184,13 @@ void receptionDonnes(int sfd, int file){
         }
         else{
         err = traitementRecu(buf, recu, payload, &payloadSize, file);
-        fprintf(stderr, "Mes numeros de sequnums après l'envoie du ack sont min %d, max %d\n", seqnumMin , seqnumMax );
+        //fprintf(stderr, "Mes numeros de sequnums après l'envoie du ack sont min %d, max %d\n", seqnumMin , seqnumMax );
         }
       }
       if(err != INGNORE && ufds[1].revents & POLLOUT){
         int sended = write(sfd,payload,payloadSize);
         if(sended != payloadSize){
-          fprintf(stderr, "Erreur lors de l'envoi de l'ackitement\n");
+          fprintf(stderr, "Erreur lors de l'envoi de l'acquitement\n");
         }
       }
 
