@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <netinet/in.h> /* * sockaddr_in6 */
 #include <sys/types.h>
+#define MAX_WINDOW_SIZE 31
 
 // = read_write_loop_sender
 
@@ -18,7 +19,7 @@ struct head {
 };
 
 struct node {
-  pkt_t *pkt; 
+  pkt_t *pkt;
   struct node* next;
 };
 
@@ -29,7 +30,7 @@ struct node {
 int add(pkt_t *pkt, struct head *buf);
 
 /*
-* supprime  de la liste chainee le node dont le seqnum du pkt est le meme que le seqnum du 
+* supprime  de la liste chainee le node dont le seqnum du pkt est le meme que le seqnum du
 *   pkt donne en argument.
 * @return : 0 succes, -1 erreur
 */
@@ -49,7 +50,7 @@ int del(pkt_t *pkt, struct head *buf);
 * @len : taille en bytes des donnees recues
 * @liste : pointeur vers une liste chainee qui constitue le buffer de reception du sender
 *
-* @return : 
+* @return :
 *
 */
 int checkReceive(const char* buf, const size_t len, struct head *reception);
@@ -58,7 +59,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception);
 /*
 * @payload: données reçues à envoyer.
 * @tosend: buffer qui contiendra le packet à envoyer.
-* 
+*
 * @return : taille de toSend
 */
 int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *buf);
@@ -71,5 +72,3 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *b
 * @file =
 */
 int envoieDonnes(int sfd, FILE* file);
-
-

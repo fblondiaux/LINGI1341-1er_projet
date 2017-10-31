@@ -16,10 +16,10 @@
 
 
 static int min = 0;
-static int max = 31;
+static int max = MAX_WINDOW_SIZE;
 static int seqnum = 0;
 static int window_dest = 1;
-static int window = 31;
+static int window = MAX_WINDOW_SIZE;
 
 
 /* rajoute un elem a la fin de la liste
@@ -133,7 +133,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
       //printf("(2) window= %d\n", window);
     }
     min = (pkt_get_seqnum(pkt)%256);
-    max = ((min+31)%256);
+    max = ((min+MAX_WINDOW_SIZE)%256);
     //printf("min = %d\n", min);
     //printf("max = %d\n", max);
 
