@@ -353,8 +353,10 @@ int envoieDonnes( int sfd, FILE* f){
           printf("J'ai vu que lu == 0\n");
           attendre = 1;
           if(reception->liste == NULL){
-            int sended = write(sfd,buf,0);
-            if(sended != 0){
+            int nombre = prepareToSend(NULL, 0, buf, reception);
+            fprintf(stderr, "nombre = %d\n", nombre);
+            int sended = write(sfd, buf, nombre);
+            if(sended != nombre){
               fprintf(stderr, "Erreur lors de l'envoi\n");
             }
             end = 1;
