@@ -129,6 +129,21 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   if(type == PTYPE_ACK)
   {
     window_dest = pkt_get_window(pkt);
+    
+    pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)-1);
+    fprintf(stderr, "Sender va suprimer le packet de seqnum : %d\n", pkt_get_seqnum(pkt));
+    int ret = del(pkt, reception);
+    if (ret!= 0)
+    {
+      fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
+      //fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
+      
+      
+      // ----------------------------------------
+      pkt_del(pkt);
+      return 0;
+    }
+    pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)+1);
 
     if(pkt_get_seqnum(pkt) > min){
       window = window +(pkt_get_seqnum(pkt)-min);
@@ -142,18 +157,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
     max = ((min+MAX_WINDOW_SIZE)%256);
     fprintf(stderr, "Sender a reçu ack, on change min = %d\n", min);
     fprintf(stderr, "Sender a reçu ack, on change max = %d\n", max);
-
-    pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)-1);
     
-    fprintf(stderr, "Sender va suprimer le packet de seqnum : %d\n", pkt_get_seqnum(pkt));
-    int ret = del(pkt, reception);
-    if (ret!= 0)
-    {
-      fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
-      //fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
-      //pkt_del(pkt);
-      //return -1;
-    }
     pkt_del(pkt);
     return 0;
   }
@@ -350,6 +354,7 @@ int envoieDonnes( int sfd, FILE* f){
               if(sended != t){
                 fprintf(stderr, "Erreur lors de l'envoi\n");
               }
+              fprintf(stderr, "sender a renvoyé le packet dont seqnum = %d\n", pkt_get_seqnum(ptr->pkt));
             }
 
           }

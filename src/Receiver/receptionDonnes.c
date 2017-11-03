@@ -18,6 +18,7 @@ struct buffer* startBuffer = NULL;
 void insertStruct(struct buffer* str){
   struct buffer* parcours = startBuffer;
   int seqnum = pkt_get_seqnum(str->data);
+  fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
   if (parcours == NULL) {
     startBuffer = str;
     startBuffer->next = NULL;
