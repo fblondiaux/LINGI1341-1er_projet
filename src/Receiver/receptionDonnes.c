@@ -54,7 +54,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
 
   if (err == E_TR && pkt_get_type(reception) == 1){
     // On va devoir envoyer un NACK
-    fprintf(stderr, "Receiver doit renvoyer un nack\n");
+    fprintf(stderr, "Receiver doit renvoyer un nack\n"); // Preparation du NACK à envoyer.
     pkt_t* ack = pkt_new(); // Préparation de la structure à encoder
     pkt_set_type(ack, 3);
     pkt_set_window(ack, window);
@@ -74,20 +74,41 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     // N : comment le nack est-il envoyé?
   }
   else if(err == PKT_OK){
+
     // On doit envoyer un ACK et écrire ce qu'il y avait dans le payload.
     int seqnum = pkt_get_seqnum(reception);
     if(seqnumMin < seqnumMax){
       if (seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
         pkt_del(reception);
-        fprintf(stderr, "Sender a déja reçu le sequnum %d, il l'ignore\n", seqnum );
-        return INGNORE;
+        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore\n", seqnum );
+        pkt_t* ack = pkt_new();
+        pkt_set_type(ack, 2);
+        pkt_set_window(ack, window);
+        pkt_set_seqnum(ack,seqnumMin);
+        pkt_set_length(ack,0);
+        pkt_set_timestamp(ack,lasttimestamp);
+        if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
+          pkt_del(ack);
+          return INGNORE;
+        }
+        return S_ACK;
       }
     }
     if(seqnumMax < seqnumMin){
       if (seqnum > seqnumMax && seqnum < seqnumMin){ // En dehors de ce que l'on peux recevoir.
         pkt_del(reception);
-        fprintf(stderr, "Sender a déja reçu le sequnum %d, il l'ignore\n", seqnum );
-        return INGNORE;
+        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore\n", seqnum );
+        pkt_t* ack = pkt_new();
+        pkt_set_type(ack, 2);
+        pkt_set_window(ack, window);
+        pkt_set_seqnum(ack,seqnumMin);
+        pkt_set_length(ack,0);
+        pkt_set_timestamp(ack,lasttimestamp);
+        if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
+          pkt_del(ack);
+          return INGNORE;
+        }
+        return S_ACK;
       }
     }
     // Creation et placement de la structure dans le buffer.
@@ -104,11 +125,8 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
       // Decalage de la fenêtre
       seqnumMin = (seqnumMin +1) % 256;
       seqnumMax = (seqnumMax +1)%256;
-
       //fprintf(stderr, "Mes numeros de sequnums, mis à jours sont min %d, max %d\n", seqnumMin , seqnumMax );
-
       lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
-
       size = pkt_get_length(current->data);
       memcpy( payloadTemp,pkt_get_payload(current->data), size);
       int ecrit = write(file, payloadTemp, size);
@@ -137,7 +155,18 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
   }
   else{
     pkt_del(reception);
-    return INGNORE;
+    pkt_t* ack = pkt_new();
+    pkt_set_type(ack, 2);
+    pkt_set_window(ack, window);
+    pkt_set_seqnum(ack,seqnumMin);
+    pkt_set_length(ack,0);
+    pkt_set_timestamp(ack,lasttimestamp);
+    if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
+      pkt_del(ack);
+      return INGNORE;
+    }
+
+    return S_ACK;
   }
 }
 
