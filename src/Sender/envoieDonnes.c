@@ -352,15 +352,26 @@ int envoieDonnes( int sfd, FILE* f){
         {
           printf("J'ai vu que lu == 0\n");
           attendre = 1;
+
+          // on ne passe jamais dans cette boucle??
           if(reception->liste == NULL){
+            printf("Sender : Je vais envoyer un packet vide\n");
             int nombre = prepareToSend(NULL, 0, buf, reception);
+            if(nombre == 0)
+            {
+              fprintf(stderr, "erreur de prepareToSend\n");
+            }
             fprintf(stderr, "nombre = %d\n", nombre);
             int sended = write(sfd, buf, nombre);
             if(sended != nombre){
               fprintf(stderr, "Erreur lors de l'envoi\n");
             }
             end = 1;
+            fprintf(stderr, "err = 1\n");
           }
+
+
+
         }
         else
         {
