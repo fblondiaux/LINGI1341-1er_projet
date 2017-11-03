@@ -155,7 +155,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
       fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
       //fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
 
-      
+
 
       // ----------------------------------------
       pkt_del(pkt);
@@ -287,8 +287,7 @@ int envoieDonnes( int sfd, FILE* f){
   if(f == NULL){
     file = STDIN_FILENO;
   }
-  else
-  {
+  else {
     file = fileno(f);
   }
   char buf[528]; // 512 + 16
@@ -299,7 +298,6 @@ int envoieDonnes( int sfd, FILE* f){
   ufds[0].events = POLLIN; // check for normal data
   ufds[1].fd = file;
   ufds[1].events = POLLIN; // check for normal data
-
   int attendre = 0;
 
   // initialisation d'un buffer vide.
@@ -307,13 +305,11 @@ int envoieDonnes( int sfd, FILE* f){
   if( reception==NULL)
     return -1; // a changer?
   reception->liste = NULL;
-
   struct node *ptr = reception->liste; /* changé */
 
   while(end == 0 ){
     // attend evenement pendant 10 sec
     int rv = poll(ufds, 2, 10000);
-
     // timeout expire
     if(rv==0){
       fprintf(stderr, "Time out\n");
@@ -325,13 +321,11 @@ int envoieDonnes( int sfd, FILE* f){
     }
     else {
       memset((void*)buf, 0, 528); // make sure the struct is empty
-
       // traite la lecture
       if (ufds[0].revents & POLLIN) {
         //printf("Sender : il y a de quoi lire !\n");
-        // receiver a recu un acquittement
-        int lu = read(sfd, buf, sizeof buf);
 
+        int lu = read(sfd, buf, sizeof buf);
         checkReceive(buf, lu, reception);
 
         // tous les éléments du fichier ont été envoyés et tous les ack ont été reçus
@@ -340,8 +334,7 @@ int envoieDonnes( int sfd, FILE* f){
           fprintf(stderr, "sender : tous les elems du fichiers ont été envoyés, tous les acks ont été reçus\n");
           fprintf(stderr, "Sender : Je vais envoyer un packet vide\n");
             int nombre = prepareToSend(NULL, 0, buf, reception);
-            if(nombre == 0)
-            {
+            if(nombre == 0) {
               fprintf(stderr, "erreur de prepareToSend\n");
             }
             fprintf(stderr, "nombre = %d\n", nombre);
@@ -359,7 +352,8 @@ int envoieDonnes( int sfd, FILE* f){
       //fprintf(stderr, "ici\n");
       while(ptr!=NULL)
       {
-        //fprintf(stderr, "timeout?\n");
+        //fprintf(stderr, "(pkt_get_timestamp(ptr->pkt)+5)=  %d\n", (pkt_get_timestamp(ptr->pkt)+5));
+        //fprintf(stderr, "((uint32_t)time(NULL)=  %d\n", ((uint32_t)time(NULL)));
         if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+5))
         {
           fprintf(stderr, "timeout du packet de seq : %d --> on réenvoie les données\n", pkt_get_seqnum(ptr->pkt));
