@@ -179,7 +179,7 @@ void receptionDonnes(int sfd, int file){
         memset((void*)payload, 0, 512); // make sure the struct is empty
         payloadSize = 512;
         int recu = read(sfd, buf, sizeof buf); // receive normal data
-        if(recu == 0){
+        if(recu == 12){ //faire un truc + propre
           end = 1;
         }
         else{

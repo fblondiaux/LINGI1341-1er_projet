@@ -108,7 +108,7 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 		return err;
 	}
 	//printf("decode : dans buffer reçu (mis en packt, en host): \n");
-	printf("decode : mis dans pkt: type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
+	/* Momentanement cacge */ fprintf(stderr, "decode : mis dans pkt: type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
 
 	//fprintf(stderr, "decode : crc1 mis dans packet (en host): %u\n", pkt_get_crc1(pkt) );
 	//fprintf(stderr, "decode : calcule crc1 (des donnees en host): %lu\n",crc32(crc,(Bytef*) data, 8 ) );
@@ -162,7 +162,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	/* DEBUG*/
 	if(pkt_get_seqnum(pkt)== 255)
 	{
-		printf("encode essaie d'encoder 255 !\n");
+		fprintf(stderr, "encode essaie d'encoder 255 !\n");
 	}
 	/* FIN DEBUG */
 
@@ -182,7 +182,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	{
 		return E_NOMEM;
 	}
-	printf("encode : dans packet : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
+	fprintf(stderr, "encode : dans packet : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
 
 
 

@@ -59,6 +59,12 @@ int del(pkt_t *pkt, struct head *reception)
 {
   uint8_t seq = pkt_get_seqnum(pkt);
   struct node *ptr = reception->liste;
+  
+  // a déjà été supprimé
+  if( pkt_get_seqnum(ptr->pkt) > seqnum)
+  {
+	  return -1;
+  }
 
   while( pkt_get_seqnum(ptr->pkt) != seq)
   {
@@ -104,19 +110,19 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   // verifier qu'on est bien censé recevoir ce packet : min <= seqnum <= max, et timestamp correct
   if( min < max) {
     if(pkt_get_seqnum(pkt) < min || pkt_get_seqnum(pkt) > max) {
-      /* DEBUG */ printf("Sender : seqnum hos séquence (1)\n");
+      /* DEBUG */ fprintf(stderr, "Sender : seqnum hos séquence (1)\n");
       return 0;
     }
   }
   else {
     if(max < pkt_get_seqnum(pkt) && pkt_get_seqnum(pkt)< min) {
-    /* DEBUG */ printf("Sender : seqnum hos séquence (2)\n");
+    /* DEBUG */ fprintf(stderr, "Sender : seqnum hos séquence (2)\n");
       return 0;
     }
   }
 
   if ((uint32_t)time(NULL) > (pkt_get_timestamp(pkt)+5)) {
-    printf("checkReceive : timestamp trop vieux\n");
+    fprintf(stderr, "checkReceive : timestamp trop vieux\n");
     return 0;
   }
 
@@ -126,26 +132,27 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
 
     if(pkt_get_seqnum(pkt) > min){
       window = window +(pkt_get_seqnum(pkt)-min);
-      //printf("(1) window = %d\n", window);
+      fprintf(stderr, "(1) window = %d\n", window);
     }
     else{
       window = window + 256 - min + pkt_get_seqnum(pkt);
-      //printf("(2) window= %d\n", window);
+      fprintf(stderr, "(2) window= %d\n", window);
     }
     min = (pkt_get_seqnum(pkt)%256);
     max = ((min+MAX_WINDOW_SIZE)%256);
-    //printf("min = %d\n", min);
-    //printf("max = %d\n", max);
+    fprintf(stderr, "Sender a reçu ack, on change min = %d\n", min);
+    fprintf(stderr, "Sender a reçu ack, on change max = %d\n", max);
 
     pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)-1);
-
+    
+    fprintf(stderr, "Sender va suprimer le packet de seqnum : %d\n", pkt_get_seqnum(pkt));
     int ret = del(pkt, reception);
     if (ret!= 0)
     {
       fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
       //fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
-      pkt_del(pkt);
-      return -1;
+      //pkt_del(pkt);
+      //return -1;
     }
     pkt_del(pkt);
     return 0;
@@ -160,7 +167,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
     pkt_del(pkt);
     return 0;
   }
-  return -1;
+  return 0;
 }
 
 
@@ -172,38 +179,38 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
   err = pkt_set_type(pkt, PTYPE_DATA);
   if( err != PKT_OK)
   {
-    printf("prepareToSend : set type\n");
+    fprintf(stderr, "prepareToSend : set type\n");
     return 0;
   }
   err = pkt_set_tr(pkt, 0);
   if( err != PKT_OK)
   {
-    printf("prepareToSend : set tr\n");
+    fprintf(stderr, "prepareToSend : set tr\n");
     return 0;
   }
   err = pkt_set_window(pkt, window);
   if( err != PKT_OK)
   {
-    printf("prepareToSend : set window\n");
-    printf("window = %d\n", window);
+    fprintf(stderr, "prepareToSend : set window\n");
+    fprintf(stderr, "window = %d\n", window);
     return 0;
   }
   err = pkt_set_seqnum(pkt, seqnum);
   if( err != PKT_OK)
   {
-   printf("prepareToSend : set seqnum\n");
+   fprintf(stderr, "prepareToSend : set seqnum\n");
     return 0;
   }
   err = pkt_set_length(pkt, taillePayload);
   if( err != PKT_OK)
   {
-    printf("prepareToSend : set length\n");
+    fprintf(stderr, "prepareToSend : set length\n");
     return 0;
   }
   err = pkt_set_timestamp(pkt, (uint32_t)time(NULL));
   if( err != PKT_OK)
   {
-    printf("prepareToSend : set timestamp\n");
+    fprintf(stderr, "prepareToSend : set timestamp\n");
     return 0;
   }
 
@@ -214,7 +221,7 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
   err = pkt_set_crc1(pkt, crc32(crc,(Bytef*) data, 8));
   if( err != PKT_OK)
   {
-    printf("prepareToSend : set crc1\n");
+    fprintf(stderr, "prepareToSend : set crc1\n");
     return 0;
   }
 
@@ -223,13 +230,13 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
     err = pkt_set_payload(pkt, payload, taillePayload);
     if( err != PKT_OK)
     {
-      printf("prepareToSend : set payload  %d\n",err);
+      fprintf(stderr, "prepareToSend : set payload  %d\n",err);
       return 0;
     }
     err = pkt_set_crc2(pkt, crc32(crc, (Bytef*) payload, taillePayload));
     if( err != PKT_OK)
     {
-      printf("prepareToSend : set crc2\n");
+      fprintf(stderr, "prepareToSend : set crc2\n");
       return 0;
     }
   }
@@ -307,12 +314,20 @@ int envoieDonnes( int sfd, FILE* f){
         // tous les éléments du fichier ont été envoyés et tous les ack ont été reçus
         if(reception->liste == NULL && attendre ==1)
         {
-          printf("sender : tous les elems du fichiers ont été envoyés, tous les acks ont été reçus\n");
-          int sended = write(sfd,buf,0);
-          if(sended != 0){
-            fprintf(stderr, "Erreur lors de l'envoi\n");
-          }
-          end = 1;
+          fprintf(stderr, "sender : tous les elems du fichiers ont été envoyés, tous les acks ont été reçus\n");
+          fprintf(stderr, "Sender : Je vais envoyer un packet vide\n");
+            int nombre = prepareToSend(NULL, 0, buf, reception);
+            if(nombre == 0)
+            {
+              fprintf(stderr, "erreur de prepareToSend\n");
+            }
+            fprintf(stderr, "nombre = %d\n", nombre);
+            int sended = write(sfd, buf, nombre);
+            if(sended != nombre){
+              fprintf(stderr, "Erreur lors de l'envoi\n");
+            }
+            end = 1;
+            fprintf(stderr, "err = 1\n");
         }
       }
 
@@ -323,7 +338,7 @@ int envoieDonnes( int sfd, FILE* f){
 
         if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+5))
         {
-          printf("timeout --> on réenvoie les données\n");
+          fprintf(stderr, "timeout --> on réenvoie les données\n");
           pkt_status_code err = pkt_set_timestamp(ptr->pkt, (uint32_t)time(NULL));
           if( err == PKT_OK)
           {
@@ -350,12 +365,12 @@ int envoieDonnes( int sfd, FILE* f){
         int lu = read(file,payload, 512);
         if(lu == 0)
         {
-          printf("J'ai vu que lu == 0\n");
+          fprintf(stderr, "J'ai vu que lu == 0\n");
           attendre = 1;
 
           // on ne passe jamais dans cette boucle??
           if(reception->liste == NULL){
-            printf("Sender : Je vais envoyer un packet vide\n");
+            fprintf(stderr, "Sender : Je vais envoyer un packet vide\n");
             int nombre = prepareToSend(NULL, 0, buf, reception);
             if(nombre == 0)
             {
