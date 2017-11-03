@@ -24,26 +24,19 @@ void insertStruct(struct buffer* str){
     startBuffer->next = NULL;
     return ;
   }
-  if(parcours->next == NULL || parcours->seqnum > seqnum){
-    if(parcours->seqnum > seqnum){
-      str->next = parcours;
-      startBuffer = str;
+  if (seqnumMin < seqnumMax){
+    
+    while(parcours->next != NULL && parcours->next->seqnum > seqnum){
 
-      return;
-    }
-    else{
-      parcours->next = str;
-      str->next = NULL;
-      return;
-    }
-  }
-  else{
-    while(parcours->next != NULL || parcours->next->seqnum < seqnum ){
-      parcours = parcours->next;
+      parcours=parcours->next;
     }
     str->next = parcours->next;
-    parcours->next = str;
+    parcours->next = str->next;
     return;
+  }
+  else{
+    fprintf(stderr, "Reste à gerer le cas ou 255 \n");
+
   }
 }
 
