@@ -159,7 +159,7 @@ void receptionDonnes(int sfd, int file){
   ufds[1].events = POLLOUT;
   while(end == 0 ){
     // attend evenement pendant 10 sec
-    int rv = poll(ufds, 2, 10000); // Faut-il changer cette valeur?
+    int rv = poll(ufds, 2, -1); // Faut-il changer cette valeur? avant : 10000
     // timeout expire
     if(rv==0){
       fprintf(stderr, "Time out\n");
