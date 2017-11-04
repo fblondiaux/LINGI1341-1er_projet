@@ -73,10 +73,22 @@ int del(pkt_t *pkt, struct head *reception)
   //fprintf(stderr, "pkt_get_seqnum(ptr->pkt) = %d\n",pkt_get_seqnum(ptr->pkt) );
   //fprintf(stderr, "seq = %d\n", seq);
   // a déjà été supprimé
-  if( pkt_get_seqnum(ptr->pkt) > seq)
+  
+
+  // A ETE CHANGE !!!
+  if(min < max )
   {
-    //fprintf(stderr, "on rentre dans la boucle\n");
-	  return -1;
+    if( pkt_get_seqnum(ptr->pkt) > seq)
+    {
+      return -1;
+    }
+  }
+  if( max < min)
+  {
+    if(pkt_get_seqnum(ptr->pkt) > seq && (pkt_get_seqnum(ptr->pkt)-seq)< 32 )
+    {
+      return -1;
+    }
   }
 
   //fprintf(stderr, "del 3\n");
@@ -89,6 +101,7 @@ int del(pkt_t *pkt, struct head *reception)
     if(ptr== NULL)
     {
       return -1; // ne l'a pas trouvé et a supprimé toute la liste chainée...
+      fprintf(stderr, "le buffer est maintenant vide\n");
     }
   }
 
@@ -155,9 +168,11 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
       fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
       //fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
 
+      // --------------------------------------------
+
+      // --------------------------------------------
 
 
-      // ----------------------------------------
       pkt_del(pkt);
       return 0;
     }
@@ -283,14 +298,16 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
 
 int envoieDonnes( int sfd, FILE* f){
   // Preparation
-  int file;
+  int filetemp;
   if(f == NULL){
-    file = STDIN_FILENO;
+    filetemp = STDIN_FILENO;
   }
   else {
-    file = fileno(f);
-    fprintf(stderr, "file desc a comme valeur au tout debut %d\n", file);
+
+    filetemp = fileno(f);
+    fprintf(stderr, "file desc a comme valeur au tout debut %d\n", filetemp);
   }
+  const int file = filetemp;
   char buf[528]; // 512 + 16
   char payload[512];
   int end = 0;
@@ -435,7 +452,6 @@ int envoieDonnes( int sfd, FILE* f){
             end = 1;
             fprintf(stderr, "err = 1\n");
           }
-
 
 
         }
