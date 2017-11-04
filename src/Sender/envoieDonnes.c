@@ -58,13 +58,28 @@ int add(pkt_t *pkt, struct head *buf)
 int del(pkt_t *pkt, struct head *reception)
 {
   uint8_t seq = pkt_get_seqnum(pkt);
+
   struct node *ptr = reception->liste;
-  
-  // a déjà été supprimé
-  if( pkt_get_seqnum(ptr->pkt) > seqnum)
+
+  fprintf(stderr, "del 1\n");
+
+  if(ptr == NULL)
   {
+    fprintf(stderr, "le buffer est vide !! :(\n");
+    return -1;
+  }
+  fprintf(stderr, "del 2\n");
+
+  fprintf(stderr, "pkt_get_seqnum(ptr->pkt) = %d\n",pkt_get_seqnum(ptr->pkt) );
+  fprintf(stderr, "seq = %d\n", seq);
+  // a déjà été supprimé
+  if( pkt_get_seqnum(ptr->pkt) > seq)
+  {
+    fprintf(stderr, "on rentre dans la boucle\n");
 	  return -1;
   }
+
+  fprintf(stderr, "del 3\n");
 
   while( pkt_get_seqnum(ptr->pkt) != seq)
   {
@@ -76,6 +91,8 @@ int del(pkt_t *pkt, struct head *reception)
       return -1; // ne l'a pas trouvé et a supprimé toute la liste chainée...
     }
   }
+
+  fprintf(stderr, "del 4\n");
   reception->liste = ptr->next;
   pkt_del(ptr->pkt);
   return 0;
@@ -130,6 +147,22 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   {
     window_dest = pkt_get_window(pkt);
 
+    pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)-1);
+    fprintf(stderr, "Sender va suprimer le packet de seqnum : %d\n", pkt_get_seqnum(pkt));
+    int ret = del(pkt, reception);
+    if (ret!= 0)
+    {
+      fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
+      //fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
+
+      
+
+      // ----------------------------------------
+      pkt_del(pkt);
+      return 0;
+    }
+    pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)+1);
+
     if(pkt_get_seqnum(pkt) > min){
       window = window +(pkt_get_seqnum(pkt)-min);
       fprintf(stderr, "(1) window = %d\n", window);
@@ -143,17 +176,6 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
     fprintf(stderr, "Sender a reçu ack, on change min = %d\n", min);
     fprintf(stderr, "Sender a reçu ack, on change max = %d\n", max);
 
-    pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)-1);
-    
-    fprintf(stderr, "Sender va suprimer le packet de seqnum : %d\n", pkt_get_seqnum(pkt));
-    int ret = del(pkt, reception);
-    if (ret!= 0)
-    {
-      fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
-      //fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
-      //pkt_del(pkt);
-      //return -1;
-    }
     pkt_del(pkt);
     return 0;
   }
@@ -286,6 +308,7 @@ int envoieDonnes( int sfd, FILE* f){
     return -1; // a changer?
   reception->liste = NULL;
 
+  struct node *ptr = reception->liste; /* changé */
 
   while(end == 0 ){
     // attend evenement pendant 10 sec
@@ -332,13 +355,14 @@ int envoieDonnes( int sfd, FILE* f){
       }
 
       // y a-t-il des timeout?
-      struct node *ptr = reception->liste;
+      ptr = reception->liste;  /* changé */
+      //fprintf(stderr, "ici\n");
       while(ptr!=NULL)
       {
-
+        //fprintf(stderr, "timeout?\n");
         if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+5))
         {
-          fprintf(stderr, "timeout --> on réenvoie les données\n");
+          fprintf(stderr, "timeout du packet de seq : %d --> on réenvoie les données\n", pkt_get_seqnum(ptr->pkt));
           pkt_status_code err = pkt_set_timestamp(ptr->pkt, (uint32_t)time(NULL));
           if( err == PKT_OK)
           {
@@ -350,8 +374,8 @@ int envoieDonnes( int sfd, FILE* f){
               if(sended != t){
                 fprintf(stderr, "Erreur lors de l'envoi\n");
               }
+              fprintf(stderr, "sender a renvoyé le packet dont seqnum = %d\n", pkt_get_seqnum(ptr->pkt));
             }
-
           }
         }
         ptr = ptr->next;
