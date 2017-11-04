@@ -283,14 +283,15 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
 
 int envoieDonnes( int sfd, FILE* f){
   // Preparation
-  int file;
+  int filetemp;
   if(f == NULL){
-    file = STDIN_FILENO;
+    filetemp = STDIN_FILENO;
   }
   else {
-    file = fileno(f);
-    fprintf("file desc a comme valeur au tout debut %d\n", file);
+    filetemp = fileno(f);
+    fprintf(stderr,"file desc a comme valeur au tout debut %d\n", filetemp);
   }
+  const int file = filetemp;
   char buf[528]; // 512 + 16
   char payload[512];
   int end = 0;

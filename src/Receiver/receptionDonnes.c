@@ -260,9 +260,7 @@ void receptionDonnes(int sfd, int file){
   ufds[1].fd = sfd;
   ufds[1].events = POLLOUT;
   while(end == 0 ){
-    fprintf(stderr,"Poll attends un event\n");
     int rv = poll(ufds, 2, -1);
-    fprintf(stderr,"UN evenement a eu lieu\n");
     if (rv == -1) {
       /*DEBUG*/ fprintf(stderr, "Error lors de l'utilisation de poll\n");
       return ;
