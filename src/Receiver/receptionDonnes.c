@@ -18,24 +18,57 @@ struct buffer* startBuffer = NULL;
 void insertStruct(struct buffer* str){
   struct buffer* parcours = startBuffer;
   int seqnum = pkt_get_seqnum(str->data);
-  fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
+    /*DEBUG*/ fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
   if (parcours == NULL) {
     startBuffer = str;
     startBuffer->next = NULL;
     return ;
   }
+
   if (seqnumMin < seqnumMax){
-    
-    while(parcours->next != NULL && parcours->next->seqnum > seqnum){
+
+    while(parcours->next != NULL && parcours->next->seqnum < seqnum){
 
       parcours=parcours->next;
     }
     str->next = parcours->next;
-    parcours->next = str->next;
+    parcours->next = str;
     return;
   }
   else{
-    fprintf(stderr, "Reste à gerer le cas ou 255 \n");
+    if(seqnum < 50){ // Seqnum est dans le début des numéros de sequence.
+      while(parcours->next != NULL && parcours->next->seqnum > 50){ // On passe tous les seqnums de 200 pour arriver avecc next
+
+        parcours=parcours->next;
+      }
+
+      //ON est a la fin
+      if(parcours->next == NULL){
+        parcours->next = str;
+        str->next = NULL;
+        return;
+      }
+      //il reste des numeros de sequences et ils sont entre 0 et 50.
+      else{
+        while(parcours->next != NULL && parcours->next->seqnum < seqnum){
+
+          parcours=parcours->next;
+        }
+        str->next = parcours->next;
+        parcours->next = str;
+        return;
+      }
+    }
+
+    else{ // seqnum > 50
+      while(parcours->next != NULL && parcours->next->seqnum > seqnum && parcours->next->seqnum > 50){
+
+        parcours=parcours->next;
+      }
+      str->next = parcours->next;
+      parcours->next = str;
+      return;
+    }
 
   }
 }
