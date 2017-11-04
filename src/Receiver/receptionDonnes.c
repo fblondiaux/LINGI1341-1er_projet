@@ -43,7 +43,6 @@ void insertStruct(struct buffer* str){
   }
     /*DEBUG*/ fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
   if (parcours == NULL) {
-    fprintf(stderr, "->%d\n",seqnum );
     startBuffer = str;
     startBuffer->next = NULL;
     return ;
@@ -53,22 +52,20 @@ void insertStruct(struct buffer* str){
     if(seqnum < parcours->seqnum){
       str->next = parcours;
       startBuffer = str;
+      return;
     }
     while(parcours->next != NULL && parcours->next->seqnum < seqnum){
-    /*DEBUG*/  fprintf(stderr, "->%d",parcours->seqnum );
 
       parcours=parcours->next;
     }
     str->next = parcours->next;
     parcours->next = str;
-    /*DEBUG*/fprintf(stderr, "->%d\n",seqnum );
     return;
   }
   else{
     if(seqnum < 50){ // Seqnum est dans le début des numéros de sequence.
       while(parcours->next != NULL && parcours->next->seqnum > 50){ // On passe tous les seqnums de 200 pour arriver avecc next
 
-          /*DEBUG*/fprintf(stderr, "->%d",parcours->seqnum );
         parcours=parcours->next;
       }
 
@@ -76,21 +73,16 @@ void insertStruct(struct buffer* str){
       if(parcours->next == NULL){
         parcours->next = str;
         str->next = NULL;
-        fprintf(stderr, "->%d\n",seqnum );
         return;
       }
       //il reste des numeros de sequences et ils sont entre 0 et 50.
       else{
         //A verif
         while(parcours->next != NULL && parcours->next->seqnum < seqnum){
-
-            fprintf(stderr, "->%d",parcours->seqnum );
           parcours=parcours->next;
         }
         str->next = parcours->next;
         parcours->next = str;
-
-        fprintf(stderr, "->%d\n",seqnum );
         return;
       }
     }
@@ -100,16 +92,15 @@ void insertStruct(struct buffer* str){
       if(seqnum < parcours->seqnum && parcours->seqnum > 50 ){
         str->next = parcours;
         startBuffer = str;
+        return;
       }
       while(parcours->next != NULL && parcours->next->seqnum > seqnum && parcours->next->seqnum > 50){
 
-          fprintf(stderr, "->%d",parcours->seqnum );
         parcours=parcours->next;
       }
       str->next = parcours->next;
       parcours->next = str;
 
-      fprintf(stderr, "->%d\n",seqnum );
       return;
     }
 
