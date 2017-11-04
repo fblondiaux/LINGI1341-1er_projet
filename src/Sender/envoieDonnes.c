@@ -145,6 +145,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
 
   if(type == PTYPE_ACK)
   {
+    printf("window_dest = %d\n", pkt_get_window(pkt));
     window_dest = pkt_get_window(pkt);
 
     pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)-1);
@@ -381,12 +382,27 @@ int envoieDonnes( int sfd, FILE* f){
         ptr = ptr->next;
       }
 
+      //fprintf(stderr, "envoieDonnes1\n");     //PASSE ICI
+
+      /*
+
+      fprintf(stderr, "(1==1) = %d\n", (1==1));
+      fprintf(stderr, "DEBUG : cond1 : %d\n", ufds[1].revents & POLLIN);
+      fprintf(stderr, "DEBUG : cond2 : %d\n", window_dest);
+      fprintf(stderr, "DEBUG : cond3 : %d\n", window);
+      fprintf(stderr, "DEBUG : cond4 : %d\n", attendre); */
+
       // traite l'ecriture
       if(ufds[1].revents & POLLIN && window_dest > 0 && window > 0 && attendre == 0)  {
-        memset((void*)payload, 0, 512); // make sure the struct is empty
 
+        fprintf(stderr, "Il y a de quoi écrire\n");
+
+        memset((void*)payload, 0, 512); // make sure the struct is empty
         // lu : nombre de bytes qui ont été lues dans file
         int lu = read(file,payload, 512);
+
+        fprintf(stderr, "envoieDonnes2\n");
+
         if(lu == 0)
         {
           fprintf(stderr, "J'ai vu que lu == 0\n");
@@ -408,8 +424,6 @@ int envoieDonnes( int sfd, FILE* f){
             end = 1;
             fprintf(stderr, "err = 1\n");
           }
-
-
 
         }
         else
