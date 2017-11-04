@@ -289,6 +289,7 @@ int envoieDonnes( int sfd, FILE* f){
   }
   else {
     file = fileno(f);
+    fprintf("file desc a comme valeur au tout debut %d\n", file);
   }
   char buf[528]; // 512 + 16
   char payload[512];
@@ -345,7 +346,7 @@ int envoieDonnes( int sfd, FILE* f){
             }
 
             // DEBUG ------------------------
-            int end2 = 0; 
+            int end2 = 0;
             int count = 0;
 
             while( end2 == 0 && count < 5)
@@ -366,7 +367,7 @@ int envoieDonnes( int sfd, FILE* f){
                 }
                 count++;
               }
-            } 
+            }
 
             // FIN DEBUG ------------------------------------
 
@@ -408,7 +409,10 @@ int envoieDonnes( int sfd, FILE* f){
         memset((void*)payload, 0, 512); // make sure the struct is empty
 
         // lu : nombre de bytes qui ont été lues dans file
+
+        fprintf(stderr, "Je m'apprete a lire dans le fichier\n");
         int lu = read(file,payload, 512);
+        fprintf(stderr, "J'ai lu dans le fichier\n");
         if(lu == 0)
         {
           fprintf(stderr, "J'ai vu que lu == 0\n");

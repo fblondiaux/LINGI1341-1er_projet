@@ -24,9 +24,23 @@ void printStruct(){
   fprintf(stderr, "fin\n");
 }
 
+int alreadyInStruct(int seqnum){
+  struct buffer* parcours = startBuffer;
+  while(parcours != NULL){
+    if (parcours->seqnum == seqnum){
+      return 1;
+    }
+    parcours = parcours->next;
+  }
+  return 0;
+}
+
 void insertStruct(struct buffer* str){
   struct buffer* parcours = startBuffer;
   int seqnum = pkt_get_seqnum(str->data);
+  if(alreadyInStruct(seqnum) == 1){
+    return;
+  }
     /*DEBUG*/ fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
   if (parcours == NULL) {
     fprintf(stderr, "->%d\n",seqnum );
@@ -36,7 +50,10 @@ void insertStruct(struct buffer* str){
   }
 
   if (seqnumMin < seqnumMax){
-
+    if(seqnum < parcours->seqnum){
+      str->next = parcours;
+      startBuffer = str;
+    }
     while(parcours->next != NULL && parcours->next->seqnum < seqnum){
     /*DEBUG*/  fprintf(stderr, "->%d",parcours->seqnum );
 
@@ -59,12 +76,12 @@ void insertStruct(struct buffer* str){
       if(parcours->next == NULL){
         parcours->next = str;
         str->next = NULL;
-
         fprintf(stderr, "->%d\n",seqnum );
         return;
       }
       //il reste des numeros de sequences et ils sont entre 0 et 50.
       else{
+        //A verif
         while(parcours->next != NULL && parcours->next->seqnum < seqnum){
 
             fprintf(stderr, "->%d",parcours->seqnum );
@@ -79,6 +96,11 @@ void insertStruct(struct buffer* str){
     }
 
     else{ // seqnum > 50
+      // L'element a inserer est plus petit que le reste de la structure.
+      if(seqnum < parcours->seqnum && parcours->seqnum > 50 ){
+        str->next = parcours;
+        startBuffer = str;
+      }
       while(parcours->next != NULL && parcours->next->seqnum > seqnum && parcours->next->seqnum > 50){
 
           fprintf(stderr, "->%d",parcours->seqnum );
@@ -164,6 +186,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     new->seqnum = seqnum;
     new->data = reception;
     printStruct();
+    fprintf(stderr, "Resultat apres insertion\n");
     insertStruct(new);
     printStruct();
     window--;
@@ -237,7 +260,9 @@ void receptionDonnes(int sfd, int file){
   ufds[1].fd = sfd;
   ufds[1].events = POLLOUT;
   while(end == 0 ){
+    fprintf(stderr,"Poll attends un event\n");
     int rv = poll(ufds, 2, -1);
+    fprintf(stderr,"UN evenement a eu lieu\n");
     if (rv == -1) {
       /*DEBUG*/ fprintf(stderr, "Error lors de l'utilisation de poll\n");
       return ;
