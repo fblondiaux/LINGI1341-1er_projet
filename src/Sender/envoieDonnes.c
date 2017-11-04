@@ -159,6 +159,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   if(type == PTYPE_ACK)
   {
     window_dest = pkt_get_window(pkt);
+    fprintf(stderr, "window_dest = %d\n", window_dest);
 
     pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)-1);
     fprintf(stderr, "Sender va suprimer le packet de seqnum : %d\n", pkt_get_seqnum(pkt));
@@ -172,9 +173,9 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
 
       // --------------------------------------------
 
-
       pkt_del(pkt);
-      return 0;
+      //return -2; // chgmt
+      return -1;
     }
     pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)+1);
 
@@ -344,7 +345,36 @@ int envoieDonnes( int sfd, FILE* f){
         //printf("Sender : il y a de quoi lire !\n");
 
         int lu = read(sfd, buf, sizeof buf);
+
         checkReceive(buf, lu, reception);
+
+        //int err2 =  checkReceive(buf, lu, reception);
+
+        /*
+        if( err2 == -2)
+        {
+          struct node *temp = reception->liste;
+          pkt_set_timestamp(temp->pkt, (uint32_t)time(NULL)); // err = ... ?
+          char buf2[528];
+
+          size_t longueur = 528;
+          // length-POST : nombre d'octets ecrits dans toSend
+          err2 = pkt_encode(temp->pkt, buf2, (size_t*) &longueur);
+          if(longueur == 0)
+          {
+            fprintf(stderr, "echec renvoi données encodage\n");
+          }
+          else
+          {
+            int sended = write(sfd, buf2, longueur);
+            if(sended != longueur){
+              fprintf(stderr, "Erreur lors de l'envoi\n");
+            }
+          }
+        }*/
+        // ------------------------------------------------------------------------------------------------
+
+
 
         // tous les éléments du fichier ont été envoyés et tous les ack ont été reçus
         if(reception->liste == NULL && attendre ==1)
@@ -400,7 +430,9 @@ int envoieDonnes( int sfd, FILE* f){
       {
         //fprintf(stderr, "(pkt_get_timestamp(ptr->pkt)+5)=  %d\n", (pkt_get_timestamp(ptr->pkt)+5));
         //fprintf(stderr, "((uint32_t)time(NULL)=  %d\n", ((uint32_t)time(NULL)));
-        if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+5))
+
+        
+        if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+4)) // chmt
         {
           fprintf(stderr, "timeout du packet de seq : %d --> on réenvoie les données\n", pkt_get_seqnum(ptr->pkt));
           pkt_status_code err = pkt_set_timestamp(ptr->pkt, (uint32_t)time(NULL));
@@ -422,6 +454,10 @@ int envoieDonnes( int sfd, FILE* f){
       }
 
       // traite l'ecriture
+      //fprintf(stderr, "cond1 : %d\n", ufds[1].revents & POLLIN);
+      //fprintf(stderr, "cond2 : %d\n", (window_dest > 0));
+      //fprintf(stderr, "cond3 : %d\n",(window > 0) );
+      //fprintf(stderr, "cond4 : %d\n", (attendre == 0));
       if(ufds[1].revents & POLLIN && window_dest > 0 && window > 0 && attendre == 0)  {
         memset((void*)payload, 0, 512); // make sure the struct is empty
 
