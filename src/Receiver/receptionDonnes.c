@@ -15,11 +15,21 @@ uint32_t lasttimestamp= 0;
 
 struct buffer* startBuffer = NULL;
 
+void printStruct(){
+  struct buffer* parcours = startBuffer;
+  while(parcours != NULL){
+    fprintf(stderr, "%d->", parcours->seqnum );
+    parcours = parcours->next;
+  }
+  fprintf(stderr, "fin\n");
+}
+
 void insertStruct(struct buffer* str){
   struct buffer* parcours = startBuffer;
   int seqnum = pkt_get_seqnum(str->data);
     /*DEBUG*/ fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
   if (parcours == NULL) {
+    fprintf(stderr, "->%d\n",seqnum );
     startBuffer = str;
     startBuffer->next = NULL;
     return ;
@@ -28,17 +38,20 @@ void insertStruct(struct buffer* str){
   if (seqnumMin < seqnumMax){
 
     while(parcours->next != NULL && parcours->next->seqnum < seqnum){
+    /*DEBUG*/  fprintf(stderr, "->%d",parcours->seqnum );
 
       parcours=parcours->next;
     }
     str->next = parcours->next;
     parcours->next = str;
+    /*DEBUG*/fprintf(stderr, "->%d\n",seqnum );
     return;
   }
   else{
     if(seqnum < 50){ // Seqnum est dans le début des numéros de sequence.
       while(parcours->next != NULL && parcours->next->seqnum > 50){ // On passe tous les seqnums de 200 pour arriver avecc next
 
+          /*DEBUG*/fprintf(stderr, "->%d",parcours->seqnum );
         parcours=parcours->next;
       }
 
@@ -46,16 +59,21 @@ void insertStruct(struct buffer* str){
       if(parcours->next == NULL){
         parcours->next = str;
         str->next = NULL;
+
+        fprintf(stderr, "->%d\n",seqnum );
         return;
       }
       //il reste des numeros de sequences et ils sont entre 0 et 50.
       else{
         while(parcours->next != NULL && parcours->next->seqnum < seqnum){
 
+            fprintf(stderr, "->%d",parcours->seqnum );
           parcours=parcours->next;
         }
         str->next = parcours->next;
         parcours->next = str;
+
+        fprintf(stderr, "->%d\n",seqnum );
         return;
       }
     }
@@ -63,10 +81,13 @@ void insertStruct(struct buffer* str){
     else{ // seqnum > 50
       while(parcours->next != NULL && parcours->next->seqnum > seqnum && parcours->next->seqnum > 50){
 
+          fprintf(stderr, "->%d",parcours->seqnum );
         parcours=parcours->next;
       }
       str->next = parcours->next;
       parcours->next = str;
+
+      fprintf(stderr, "->%d\n",seqnum );
       return;
     }
 
@@ -106,7 +127,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     if(seqnumMin < seqnumMax){
       if (seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
         pkt_del(reception);
-        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore\n", seqnum );
+        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ack\n", seqnum );
         pkt_t* ack = pkt_new();
         pkt_set_type(ack, 2);
         pkt_set_window(ack, window);
@@ -123,7 +144,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     if(seqnumMax < seqnumMin){
       if (seqnum > seqnumMax && seqnum < seqnumMin){ // En dehors de ce que l'on peux recevoir.
         pkt_del(reception);
-        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore\n", seqnum );
+        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ackn", seqnum );
         pkt_t* ack = pkt_new();
         pkt_set_type(ack, 2);
         pkt_set_window(ack, window);
@@ -138,10 +159,13 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
       }
     }
     // Creation et placement de la structure dans le buffer.
+
     struct buffer* new = malloc(sizeof(struct buffer));
     new->seqnum = seqnum;
     new->data = reception;
+    printStruct();
     insertStruct(new);
+    printStruct();
     window--;
     //Envoie du ack.
     struct buffer* current = startBuffer;
@@ -150,7 +174,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     while(startBuffer != NULL && startBuffer->seqnum == seqnumMin){
       // Decalage de la fenêtre
       seqnumMin = (seqnumMin +1) % 256;
-      seqnumMax = (seqnumMax +1)%256;
+      seqnumMax = (seqnumMax +1) % 256;
       //fprintf(stderr, "Mes numeros de sequnums, mis à jours sont min %d, max %d\n", seqnumMin , seqnumMax );
       lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
       size = pkt_get_length(current->data);
@@ -200,7 +224,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
 void receptionDonnes(int sfd, int file){
   // Preparation
 
-  //fprintf(stderr, "AVANT DE COMMENCER min %d, max %d\n", seqnumMin , seqnumMax );
+
   char buf[528];
   char payload[512];
   size_t payloadSize = 512;
@@ -213,15 +237,9 @@ void receptionDonnes(int sfd, int file){
   ufds[1].fd = sfd;
   ufds[1].events = POLLOUT;
   while(end == 0 ){
-    // attend evenement pendant 10 sec
-    int rv = poll(ufds, 2, -1); // Faut-il changer cette valeur? avant : 10000
-    // timeout expire
-    if(rv==0){
-      fprintf(stderr, "Time out\n");
-      return;
-    }
-    else if (rv == -1) {
-      fprintf(stderr, "Error lors de l'utilisation de poll\n");
+    int rv = poll(ufds, 2, -1);
+    if (rv == -1) {
+      /*DEBUG*/ fprintf(stderr, "Error lors de l'utilisation de poll\n");
       return ;
     }
     else {
@@ -229,23 +247,23 @@ void receptionDonnes(int sfd, int file){
       err = INGNORE;
       // traite la lecture
       if (ufds[0].revents & POLLIN) {
-        fprintf(stderr, "il y a de quoi lire\n");
+        /*DEBUG*/fprintf(stderr, "il y a de quoi lire\n");
         memset((void*)payload, 0, 512); // make sure the struct is empty
         payloadSize = 512;
         int recu = read(sfd, buf, sizeof buf); // receive normal data
         if(recu == 12){ //faire un truc + propre
-          fprintf(stderr, "J'ai reçu le dernier packer, 0\n");
+          /*DEBUG*/fprintf(stderr, "J'ai reçu le dernier packet, 0\n");
           end = 1;
         }
         else{
           err = traitementRecu(buf, recu, payload, &payloadSize, file);
-          fprintf(stderr, "Mes numeros de sequnums après l'envoie du ack sont min %d, max %d\n", seqnumMin , seqnumMax );
         }
       }
       if(err != INGNORE && ufds[1].revents & POLLOUT){
+        /*DEBUG*/fprintf(stderr, "Envoie d'un ack\n" );
         int sended = write(sfd,payload,payloadSize);
         if(sended != payloadSize){
-          fprintf(stderr, "Erreur lors de l'envoi de l'acquitement\n");
+          fprintf(stderr, "Erreur lors de l'envoi de l'acquitement, on continue\n");
         }
       }
     }
