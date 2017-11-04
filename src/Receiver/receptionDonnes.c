@@ -37,8 +37,8 @@ int alreadyInStruct(int seqnum){
 
 void insertStruct(struct buffer* str){
 
-  fprintf(stderr, "seqnumMin = %d\n", seqnumMin);
-  fprintf(stderr, "seqnumMax = %d\n", seqnumMax);
+  //fprintf(stderr, "seqnumMin = %d\n", seqnumMin);
+  //fprintf(stderr, "seqnumMax = %d\n", seqnumMax);
   struct buffer* parcours = startBuffer;
   int seqnum = pkt_get_seqnum(str->data);
 
@@ -229,14 +229,14 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     fprintf(stderr, "Resultat apres insertion\n");
     insertStruct(new);
     printStruct();
-    fprintf(stderr, "debug1\n");
+    //fprintf(stderr, "debug1\n");
     //window--;
-    fprintf(stderr, "windiw avant while : %d\n", window);
+    fprintf(stderr, "window avant while : %d\n", window);
     //Envoie du ack.
     struct buffer* current = startBuffer;
     char payloadTemp[512];
     int size = 0;
-    fprintf(stderr, "debug2\n");
+    //fprintf(stderr, "debug2\n");
     //while(current != NULL && current->seqnum == seqnumMin){
     while(startBuffer != NULL && startBuffer->seqnum == seqnumMin){
       // Decalage de la fenêtre
@@ -246,42 +246,42 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
       
       //lasttimestamp = pkt_get_timestamp(current->data);
       lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
-      fprintf(stderr, "debug2-1\n");
+      //fprintf(stderr, "debug2-1\n");
       size = pkt_get_length(current->data);
       memcpy( payloadTemp,pkt_get_payload(current->data), size);
       int ecrit = write(file, payloadTemp, size);
       if(ecrit!=size){
         fprintf(stderr, "Le segment à été reçu mais un problème à été rencontré lors de l'écriture de son payload\n");
       }
-      fprintf(stderr, "debug2-2\n");
+      //fprintf(stderr, "debug2-2\n");
       //current = current->next;
       startBuffer = startBuffer->next;
       //current = startBuffer;
-      fprintf(stderr, "debug2-3\n");
+      //fprintf(stderr, "debug2-3\n");
       pkt_del(current->data);           // free qui pose problème
-      fprintf(stderr, "debug2-4\n");
+      //fprintf(stderr, "debug2-4\n");
       free(current);        
-      fprintf(stderr, "debug2-5\n");
+      //fprintf(stderr, "debug2-5\n");
       window ++; // ON a libere une place dans le buffer
       fprintf(stderr, "window = %d\n", window);
       current = startBuffer;
     }
-    fprintf(stderr, "debug3\n");
+    //fprintf(stderr, "debug3\n");
     pkt_t* ack = pkt_new();
     pkt_set_type(ack, 2);
     pkt_set_window(ack, window);
     pkt_set_seqnum(ack,seqnumMin);
     pkt_set_length(ack,0);
     pkt_set_timestamp(ack,lasttimestamp);
-    fprintf(stderr, "debug4\n");
+    //fprintf(stderr, "debug4\n");
     if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
       pkt_del(ack);
       return INGNORE;
     }
-    fprintf(stderr, "debug5\n");
+    ///fprintf(stderr, "debug5\n");
 
     pkt_del(ack);
-    fprintf(stderr, "debug6\n");
+    //fprintf(stderr, "debug6\n");
     return S_ACK;
 
   }
@@ -332,7 +332,7 @@ void receptionDonnes(int sfd, int file){
       err = INGNORE;
       // traite la lecture
       if (ufds[0].revents & POLLIN) {
-        /*DEBUG*/fprintf(stderr, "il y a de quoi lire\n");
+        /*DEBUG*/ //fprintf(stderr, "il y a de quoi lire\n");
         memset((void*)payload, 0, 512); // make sure the struct is empty
         payloadSize = 512;
         int recu = read(sfd, buf, sizeof buf); // receive normal data
@@ -345,7 +345,7 @@ void receptionDonnes(int sfd, int file){
         }
       }
       if(err != INGNORE && ufds[1].revents & POLLOUT){
-        /*DEBUG*/fprintf(stderr, "Envoie d'un ack\n" );
+        /*DEBUG*/ //fprintf(stderr, "Envoie d'un ack\n" );
         int sended = write(sfd,payload,payloadSize);
         if(sended != payloadSize){
           fprintf(stderr, "Erreur lors de l'envoi de l'acquitement, on continue\n");

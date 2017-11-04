@@ -380,12 +380,12 @@ int envoieDonnes( int sfd, FILE* f){
         if(reception->liste == NULL && attendre ==1)
         {
           fprintf(stderr, "sender : tous les elems du fichiers ont été envoyés, tous les acks ont été reçus\n");
-          fprintf(stderr, "Sender : Je vais envoyer un packet vide\n");
+          //fprintf(stderr, "Sender : Je vais envoyer un packet vide\n");
             int nombre = prepareToSend(NULL, 0, buf, reception);
             if(nombre == 0) {
               fprintf(stderr, "erreur de prepareToSend\n");
             }
-            fprintf(stderr, "nombre = %d\n", nombre);
+            //fprintf(stderr, "nombre = %d\n", nombre);
             uint32_t time_end = (uint32_t)time(NULL);       // DEBUG
             int sended = write(sfd, buf, nombre);
             if(sended != nombre){
@@ -431,7 +431,7 @@ int envoieDonnes( int sfd, FILE* f){
         //fprintf(stderr, "(pkt_get_timestamp(ptr->pkt)+5)=  %d\n", (pkt_get_timestamp(ptr->pkt)+5));
         //fprintf(stderr, "((uint32_t)time(NULL)=  %d\n", ((uint32_t)time(NULL)));
 
-        
+
         if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+4)) // chmt
         {
           fprintf(stderr, "timeout du packet de seq : %d --> on réenvoie les données\n", pkt_get_seqnum(ptr->pkt));
@@ -446,7 +446,7 @@ int envoieDonnes( int sfd, FILE* f){
               if(sended != t){
                 fprintf(stderr, "Erreur lors de l'envoi\n");
               }
-              fprintf(stderr, "sender a renvoyé le packet dont seqnum = %d\n", pkt_get_seqnum(ptr->pkt));
+              //fprintf(stderr, "sender a renvoyé le packet dont seqnum = %d\n", pkt_get_seqnum(ptr->pkt));
             }
           }
         }
@@ -463,10 +463,10 @@ int envoieDonnes( int sfd, FILE* f){
 
         // lu : nombre de bytes qui ont été lues dans file
 
-        fprintf(stderr, "sender : avant read fichier\n");
+        //fprintf(stderr, "sender : avant read fichier\n");
         fprintf(stderr, "file = %d\n", file);
         int lu = read(file,payload, 512);
-        fprintf(stderr, "sender : après read fichier\n");
+        //fprintf(stderr, "sender : après read fichier\n");
         if(lu == 0)
         {
           fprintf(stderr, "J'ai vu que lu == 0\n");
@@ -480,7 +480,7 @@ int envoieDonnes( int sfd, FILE* f){
             {
               fprintf(stderr, "erreur de prepareToSend\n");
             }
-            fprintf(stderr, "nombre = %d\n", nombre);
+            //fprintf(stderr, "nombre = %d\n", nombre);
             int sended = write(sfd, buf, nombre);
             if(sended != nombre){
               fprintf(stderr, "Erreur lors de l'envoi\n");
