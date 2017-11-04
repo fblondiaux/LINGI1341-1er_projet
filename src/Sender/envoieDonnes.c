@@ -338,10 +338,38 @@ int envoieDonnes( int sfd, FILE* f){
               fprintf(stderr, "erreur de prepareToSend\n");
             }
             fprintf(stderr, "nombre = %d\n", nombre);
+            uint32_t time_end = (uint32_t)time(NULL);       // DEBUG
             int sended = write(sfd, buf, nombre);
             if(sended != nombre){
               fprintf(stderr, "Erreur lors de l'envoi\n");
             }
+
+            // DEBUG ------------------------
+            int end2 = 0; 
+            int count = 0;
+
+            while( end2 == 0 && count < 5)
+            {
+              // a recu le ack
+              if (ufds[0].revents & POLLIN)
+              {
+                end2 = 1;
+                fprintf(stderr, "end2=1\n");
+              }
+
+              else if((uint32_t)time(NULL) > time_end+5)
+              {
+                time_end = (uint32_t)time(NULL);
+                sended = write(sfd, buf, nombre);
+                if(sended != nombre){
+                  fprintf(stderr, "Erreur lors de l'envoi\n");
+                }
+                count++;
+              }
+            } 
+
+            // FIN DEBUG ------------------------------------
+
             end = 1;
             fprintf(stderr, "err = 1\n");
         }
