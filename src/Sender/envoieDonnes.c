@@ -61,25 +61,25 @@ int del(pkt_t *pkt, struct head *reception)
 
   struct node *ptr = reception->liste;
 
-  fprintf(stderr, "del 1\n");
+  //fprintf(stderr, "del 1\n");
 
   if(ptr == NULL)
   {
     fprintf(stderr, "le buffer est vide !! :(\n");
     return -1;
   }
-  fprintf(stderr, "del 2\n");
+  //fprintf(stderr, "del 2\n");
 
-  fprintf(stderr, "pkt_get_seqnum(ptr->pkt) = %d\n",pkt_get_seqnum(ptr->pkt) );
-  fprintf(stderr, "seq = %d\n", seq);
+  //fprintf(stderr, "pkt_get_seqnum(ptr->pkt) = %d\n",pkt_get_seqnum(ptr->pkt) );
+  //fprintf(stderr, "seq = %d\n", seq);
   // a déjà été supprimé
   if( pkt_get_seqnum(ptr->pkt) > seq)
   {
-    fprintf(stderr, "on rentre dans la boucle\n");
+    //fprintf(stderr, "on rentre dans la boucle\n");
 	  return -1;
   }
 
-  fprintf(stderr, "del 3\n");
+  //fprintf(stderr, "del 3\n");
 
   while( pkt_get_seqnum(ptr->pkt) != seq)
   {
@@ -92,7 +92,7 @@ int del(pkt_t *pkt, struct head *reception)
     }
   }
 
-  fprintf(stderr, "del 4\n");
+  //fprintf(stderr, "del 4\n");
   reception->liste = ptr->next;
   pkt_del(ptr->pkt);
   return 0;
@@ -289,7 +289,7 @@ int envoieDonnes( int sfd, FILE* f){
   }
   else {
     file = fileno(f);
-    fprintf("file desc a comme valeur au tout debut %d\n", file);
+    fprintf(stderr, "file desc a comme valeur au tout debut %d\n", file);
   }
   char buf[528]; // 512 + 16
   char payload[512];
@@ -410,9 +410,10 @@ int envoieDonnes( int sfd, FILE* f){
 
         // lu : nombre de bytes qui ont été lues dans file
 
-        fprintf(stderr, "Je m'apprete a lire dans le fichier\n");
+        fprintf(stderr, "sender : avant read fichier\n");
+        fprintf(stderr, "file = %d\n", file);
         int lu = read(file,payload, 512);
-        fprintf(stderr, "J'ai lu dans le fichier\n");
+        fprintf(stderr, "sender : après read fichier\n");
         if(lu == 0)
         {
           fprintf(stderr, "J'ai vu que lu == 0\n");

@@ -166,7 +166,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     if(seqnumMax < seqnumMin){
       if (seqnum > seqnumMax && seqnum < seqnumMin){ // En dehors de ce que l'on peux recevoir.
         pkt_del(reception);
-        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ackn", seqnum );
+        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ack\n", seqnum );
         pkt_t* ack = pkt_new();
         pkt_set_type(ack, 2);
         pkt_set_window(ack, window);
@@ -185,7 +185,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     struct buffer* new = malloc(sizeof(struct buffer));
     new->seqnum = seqnum;
     new->data = reception;
-    printStruct();
+    //printStruct();
     fprintf(stderr, "Resultat apres insertion\n");
     insertStruct(new);
     printStruct();
@@ -260,9 +260,9 @@ void receptionDonnes(int sfd, int file){
   ufds[1].fd = sfd;
   ufds[1].events = POLLOUT;
   while(end == 0 ){
-    fprintf(stderr,"Poll attends un event\n");
+    //fprintf(stderr,"Poll attends un event\n");
     int rv = poll(ufds, 2, -1);
-    fprintf(stderr,"UN evenement a eu lieu\n");
+    //fprintf(stderr,"UN evenement a eu lieu\n");
     if (rv == -1) {
       /*DEBUG*/ fprintf(stderr, "Error lors de l'utilisation de poll\n");
       return ;
