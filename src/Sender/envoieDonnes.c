@@ -12,8 +12,6 @@
 #include <netinet/in.h> /* * sockaddr_in6 */
 #include <sys/types.h>
 
-// = read_write_loop_sender
-
 
 static int min = 0;
 static int max = MAX_WINDOW_SIZE;
@@ -21,10 +19,17 @@ static int seqnum = 0;
 static int window_dest = 1;
 static int window = MAX_WINDOW_SIZE;
 
+// verifier accent ! 
+// verifier paquet et non packet ! 
 
-/* rajoute un elem a la fin de la liste
+
+/* 
+* Rajoute une structure node qui contient un pointeur vers pkt a la fin 
+* de la liste chainee dont le pointeur vers la tete de cette liste chainee est buf. 
 *
-* @ return : 0 succes, -1 erreur
+* @pkt : pointeur vers un packet
+* @buf : pointeur vers une structure head qui represente la tete de la liste chainee
+* @return : 0 succes, -1 erreur
 */
 int add(pkt_t *pkt, struct head *buf)
 {
@@ -41,7 +46,7 @@ int add(pkt_t *pkt, struct head *buf)
   }
 
   struct node *ptr = buf->liste;
-  while( ptr->next != NULL)
+  while(ptr->next != NULL)
   {
     ptr = ptr->next;
   }
@@ -50,45 +55,28 @@ int add(pkt_t *pkt, struct head *buf)
 }
 
 /*
-* supprime  de la liste chainee le node dont le seqnum du pkt est le meme que le seqnum du
-*   pkt donne en argument.
-*
-* @return : 0 succes, -1 erreur
+* Supprime  de la liste chainee (dont la tete est buf) le node qui a un paquet dont le numero de sequence est egal
+* au numero de sequence du paquet donne en argument, ainsi que tous les nodes dont le paquet a ete envoye precedemment. 
+* 
+* Si la liste chainee ne contient pas de node dont le numero de sequence du paquet est egal au numero de sequence 
+* du paquet donne en argument, (c-a-d : si sender a deja recu un ack avec ce numero de sequence), retourne -1
+* Sinon, retourne 0.
+*  
+* @pkt : pointeur vers un paquet 
+* @buf : pointeur vers une structure head qui est la tete d'une la liste chainee de node.
+* @return : 0 ou -1 
 */
 int del(pkt_t *pkt, struct head *reception)
 {
-
-  fprintf(stderr, "del : dans struct : \n");
-  struct node *current = reception->liste;
-
-  while(current != NULL)
-  {
-    fprintf(stderr, "->%d", pkt_get_seqnum(current->pkt));
-    current = current->next;
-  }
-  fprintf(stderr, "\n");
-
-
-
-
   uint8_t seq = pkt_get_seqnum(pkt);
   struct node *ptr = reception->liste;
 
-  //fprintf(stderr, "del 1\n");
-
-  if(ptr == NULL)
-  {
-    fprintf(stderr, "le buffer est vide !! :(\n");
+  if(ptr == NULL) {
+    fprintf(stderr, "Le buffer d'envoi de sender est vide\n");
     return -1;
   }
-  //fprintf(stderr, "del 2\n");
 
-  //fprintf(stderr, "pkt_get_seqnum(ptr->pkt) = %d\n",pkt_get_seqnum(ptr->pkt) );
-  //fprintf(stderr, "seq = %d\n", seq);
-  // a déjà été supprimé
-
-
-  // A ETE CHANGE !!!
+  // sender a-t-il deja recu un ack concernant ce packet? si oui -> return -1
   if(min < max )
   {
     if( pkt_get_seqnum(ptr->pkt) > seq)
@@ -104,40 +92,41 @@ int del(pkt_t *pkt, struct head *reception)
     }
   }
 
-  //fprintf(stderr, "del 3\n");
-
-  while( pkt_get_seqnum(ptr->pkt) != seq)
+  while(pkt_get_seqnum(ptr->pkt) != seq)
   {
     reception->liste = ptr->next;
     pkt_del(ptr->pkt);
     ptr = ptr->next;
     if(ptr== NULL)
     {
-      return -1; // ne l'a pas trouvé et a supprimé toute la liste chainée...
-      fprintf(stderr, "le buffer est maintenant vide\n");
+      return -1; // la paquet n'a pas ete trouve et le buffer est vide
     }
   }
-
-  //fprintf(stderr, "del 4\n");
   reception->liste = ptr->next;
   pkt_del(ptr->pkt);
-
-  fprintf(stderr, "del(2) : dans struct : \n");
-  current = reception->liste;
-
-  while(current != NULL)
-  {
-    fprintf(stderr, "->%d", pkt_get_seqnum(current->pkt));
-    current = current->next;
-  }
-  fprintf(stderr, "\n");
-
   return 0;
 }
 
 /*
-* Receiver a recu a recu des donnees (normalment d'acquittement ou de non-acquittement)
-* checkReceive gere ces donnees.
+* checkreceive gere les donnees que receiver a recues : 
+* checkereceive ignore le packet si
+* - le paquet est tronqué ou incohéerent
+* - le numero de sequence du paquet est en dehors de la fenetre de numeros de sequence autorises.
+* - le timestamp du paquet est trop vieux
+* - le packet est de type NACK. Dans ce cas, ce packet sera reenvoye au receiver au bout d'un certain temps (grace au timer)
+*
+* Si le paquet n'est pas ignore pour les raisons precedantes et qu'il s'agit d'un paquet de type ACK,
+* checkreceive met a jour window_dest, tente de supprimer le paquet de donnees correspondant au ack 
+* dans le buffer d'envoi (liste chainee dont le pointeur vers la tete est reception), et
+* met a jour window, min et max.
+*
+* @buf : buffer contenant les donnees a gerer
+* @len : taille en bytes des donnees recues
+* @reception : pointeur vers une structure head qui represente la tete de la liste chainee (buffer d'envoi)
+* @return : 
+*     - -2 si le paquet n'a pas pu etre supprime du buffer d'envoi et est donc ignore
+*     - -1 si le paquet est incoherent ou si erreur dans decodage
+*     -  0 si un/des paquets a/ont ete supprime ou si on ignore la paquet pour une autre raison
 */
 int checkReceive(const char* buf, const size_t len, struct head *reception)
 {
@@ -158,23 +147,22 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
   if( type == PTYPE_DATA || trFlag != 0)
   {
     fprintf(stderr, "type de packet incohérent ou packet tronqué\n");
-    return -1;; // ignore
+    return -1;
   }
 
-  // verifier qu'on est bien censé recevoir ce packet : min <= seqnum <= max, et timestamp correct
+  // verifier que sender est bien censé recevoir ce packet : min <= seqnum <= max, et timestamp correct
   if( min < max) {
     if(pkt_get_seqnum(pkt) < min || pkt_get_seqnum(pkt) > max) {
-      /* DEBUG */ fprintf(stderr, "Sender : seqnum hos séquence (1)\n");
+      fprintf(stderr, "Sender : seqnum hos séquence (1)\n");
       return 0;
     }
   }
   else {
     if(max < pkt_get_seqnum(pkt) && pkt_get_seqnum(pkt)< min) {
-    /* DEBUG */ fprintf(stderr, "Sender : seqnum hos séquence (2)\n");
+      fprintf(stderr, "Sender : seqnum hos séquence (2)\n");
       return 0;
     }
   }
-
   if ((uint32_t)time(NULL) > (pkt_get_timestamp(pkt)+5)) {
     fprintf(stderr, "checkReceive : timestamp trop vieux\n");
     return 0;
@@ -190,49 +178,48 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
     int ret = del(pkt, reception);
     if (ret!= 0)
     {
-      fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
-      //fprintf(stderr, "on voulait supprimer le packet avec seqnum = %d\n", pkt_get_seqnum(pkt));
-
-      // --------------------------------------------
-
-      // --------------------------------------------
-
+      /* DEBUG */ fprintf(stderr, "Impossible de supprimer ce packet du buffer de réception de Sender\n");
       pkt_del(pkt);
-      return -2; // chgmt
-      //return -1;
+      return -2; 
     }
     pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)+1);
 
     if(pkt_get_seqnum(pkt) > min){
       window = window +(pkt_get_seqnum(pkt)-min);
-      fprintf(stderr, "(1) window = %d\n", window);
+      /* DEBUG */ fprintf(stderr, "(1) window = %d\n", window);
     }
     else{
       window = window + 256 - min + pkt_get_seqnum(pkt);
-      fprintf(stderr, "(2) window= %d\n", window);
+      /* DEBUG */ fprintf(stderr, "(2) window= %d\n", window);
     }
     min = (pkt_get_seqnum(pkt)%256);
     max = ((min+MAX_WINDOW_SIZE)%256);
-    fprintf(stderr, "Sender a reçu ack, on change min = %d\n", min);
-    fprintf(stderr, "Sender a reçu ack, on change max = %d\n", max);
+    /* DEBUG */ fprintf(stderr, "Sender a reçu ack, on change min = %d\n", min);
+    /* DEBUG */ fprintf(stderr, "Sender a reçu ack, on change max = %d\n", max);
 
     pkt_del(pkt);
     return 0;
   }
 
-  // packet de non acquittement.
-  // on choisit d'ignorer le packet. Le time-out s'occupera de renvoyer le packet qui a été reçu tronqué.
   if(type == PTYPE_NACK)
   {
-    //printf("Sender : reçu un NACK\n");
-    // renvoyer packet
     pkt_del(pkt);
     return 0;
   }
   return 0;
 }
 
-
+/*
+* prepareToSend convertit le payload qui represente les donnees a envoyer en une structure pkt_t, 
+* calcule crc1 ainsi que crc2 si payload != NULL, ajoute le paquet dans le buffer d'envoi du sender 
+* convertit ce paquet en un buffer pret a etre envoye au receiver. 
+*
+* @payload : donnees  a envoyer au sender
+* @taillePayload : taille en bytes du payload
+* @toSend : buffer dans lequel on stoque les donnees pretes a etre envoyees
+* @reception : pointeur vers la tete de la liste chainee de node qui represente le buffer d'envoi de sender
+* @return : 0 en cas d'erreur, ou la taille en bytes ecrits dans toSend
+*/
 int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *reception)
 {
   pkt_status_code err;
@@ -241,38 +228,38 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
   err = pkt_set_type(pkt, PTYPE_DATA);
   if( err != PKT_OK)
   {
-    fprintf(stderr, "prepareToSend : set type\n");
+    fprintf(stderr, "echec prepareToSend : set type\n");
     return 0;
   }
   err = pkt_set_tr(pkt, 0);
   if( err != PKT_OK)
   {
-    fprintf(stderr, "prepareToSend : set tr\n");
+    fprintf(stderr, "echec prepareToSend : set tr\n");
     return 0;
   }
   err = pkt_set_window(pkt, window);
   if( err != PKT_OK)
   {
-    fprintf(stderr, "prepareToSend : set window\n");
-    fprintf(stderr, "window = %d\n", window);
+    fprintf(stderr, "echec prepareToSend : set window\n");
+    /* DEBUG*/ fprintf(stderr, "window = %d\n", window);
     return 0;
   }
   err = pkt_set_seqnum(pkt, seqnum);
   if( err != PKT_OK)
   {
-   fprintf(stderr, "prepareToSend : set seqnum\n");
+   fprintf(stderr, "echec prepareToSend : set seqnum\n");
     return 0;
   }
   err = pkt_set_length(pkt, taillePayload);
   if( err != PKT_OK)
   {
-    fprintf(stderr, "prepareToSend : set length\n");
+    fprintf(stderr, "echec prepareToSend : set length\n");
     return 0;
   }
   err = pkt_set_timestamp(pkt, (uint32_t)time(NULL));
   if( err != PKT_OK)
   {
-    fprintf(stderr, "prepareToSend : set timestamp\n");
+    fprintf(stderr, "echec prepareToSend : set timestamp\n");
     return 0;
   }
 
@@ -283,7 +270,7 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
   err = pkt_set_crc1(pkt, crc32(crc,(Bytef*) data, 8));
   if( err != PKT_OK)
   {
-    fprintf(stderr, "prepareToSend : set crc1\n");
+    fprintf(stderr, "echec prepareToSend : set crc1\n");
     return 0;
   }
 
@@ -292,37 +279,31 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
     err = pkt_set_payload(pkt, payload, taillePayload);
     if( err != PKT_OK)
     {
-      fprintf(stderr, "prepareToSend : set payload  %d\n",err);
+      fprintf(stderr, "echec prepareToSend : set payload  %d\n",err);
       return 0;
     }
     err = pkt_set_crc2(pkt, crc32(crc, (Bytef*) payload, taillePayload));
     if( err != PKT_OK)
     {
-      fprintf(stderr, "prepareToSend : set crc2\n");
+      fprintf(stderr, "echec prepareToSend : set crc2\n");
       return 0;
     }
   }
 
-
-  //rajoute pkt dans le buffer de reception
+  //rajoute pkt dans le buffer d'envoi
   int nb = add(pkt, reception);
-  //printf("prepareToSend : 5\n");
-  if(nb != 0)
+  if(nb != 0) {
     return 0;
-
+  }
 
   //taille dispo dans toSend
   int length = 528;
-
   // length-POST : nombre d'octets ecrits dans toSend
-
   err = pkt_encode(pkt, toSend, (size_t*) &length);
-
   return length;
 }
 
 int envoieDonnes( int sfd, FILE* f){
-  // Preparation
   int filetemp;
   if(f == NULL){
     filetemp = STDIN_FILENO;
@@ -330,7 +311,7 @@ int envoieDonnes( int sfd, FILE* f){
   else {
 
     filetemp = fileno(f);
-    fprintf(stderr, "file desc a comme valeur au tout debut %d\n", filetemp);
+    /* DEBUG */ fprintf(stderr, "file desc a comme valeur au tout debut %d\n", filetemp);
   }
   const int file = filetemp;
   char buf[528]; // 512 + 16
@@ -345,7 +326,7 @@ int envoieDonnes( int sfd, FILE* f){
 
   // initialisation d'un buffer vide.
   struct head *reception = (struct head *)malloc(sizeof(struct head));
-  if( reception==NULL)
+  if(reception==NULL)
     return -1; // a changer?
   reception->liste = NULL;
   struct node *ptr = reception->liste; /* changé */
@@ -426,6 +407,7 @@ int envoieDonnes( int sfd, FILE* f){
               if (ufds[0].revents & POLLIN)
               {
                 if(checkReceive(buf,lu,reception) != 0){
+                  memset((void*)buf, 0, 528);
                   fprintf(stderr, "Ce n'est pas ce que j'attendais pour me fermer, j'attends un autre ack.\n");
                   count ++;
                 }
