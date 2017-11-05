@@ -119,14 +119,7 @@ void insertStruct(struct buffer* str){
         startBuffer = str;
         return;
       }
-      // N :chgmt
-      /*
-      if( (seqnum-(parcours->seqnum)) > 32)
-      {
-        str->next = parcours;
-        startBuffer = str;
-        return;
-      }*/
+
 
       // N : chgmt
       while( parcours->next!= NULL && parcours->next->seqnum > 50 &&  seqnum > parcours->next->seqnum)

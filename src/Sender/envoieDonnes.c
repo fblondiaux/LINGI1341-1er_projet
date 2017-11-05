@@ -57,7 +57,7 @@ int add(pkt_t *pkt, struct head *buf)
 */
 int del(pkt_t *pkt, struct head *reception)
 {
-  /*
+  
   fprintf(stderr, "del : dans struct : \n");
   struct node *current = reception->liste;
 
@@ -67,7 +67,7 @@ int del(pkt_t *pkt, struct head *reception)
     current = current->next;
   }
   fprintf(stderr, "\n");
-*/
+
 
 
 
@@ -121,6 +121,17 @@ int del(pkt_t *pkt, struct head *reception)
   //fprintf(stderr, "del 4\n");
   reception->liste = ptr->next;
   pkt_del(ptr->pkt);
+
+  fprintf(stderr, "del(2) : dans struct : \n");
+  current = reception->liste;
+
+  while(current != NULL)
+  {
+    fprintf(stderr, "->%d", pkt_get_seqnum(current->pkt));
+    current = current->next;
+  }
+  fprintf(stderr, "\n");
+
   return 0;
 }
 
@@ -370,7 +381,7 @@ int envoieDonnes( int sfd, FILE* f){
           pkt_set_timestamp(temp->pkt, (uint32_t)time(NULL)); // err = ... ?
           char buf2[528];
 
-          size_t longueur = 528;
+          int longueur = 528;
           // length-POST : nombre d'octets ecrits dans toSend
           err2 = pkt_encode(temp->pkt, buf2, (size_t*) &longueur);
           if(longueur == 0)

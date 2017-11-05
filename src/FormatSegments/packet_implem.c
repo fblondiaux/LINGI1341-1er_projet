@@ -159,13 +159,6 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 // struct pkt -> buffer
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
-	/* DEBUG*/
-	if(pkt_get_seqnum(pkt)== 255)
-	{
-		fprintf(stderr, "encode essaie d'encoder 255 !\n");
-	}
-	/* FIN DEBUG */
-
 	int count = 0;
 	if( buf==NULL || *len == 0){
 		return E_NOMEM;
