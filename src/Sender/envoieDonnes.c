@@ -57,8 +57,21 @@ int add(pkt_t *pkt, struct head *buf)
 */
 int del(pkt_t *pkt, struct head *reception)
 {
-  uint8_t seq = pkt_get_seqnum(pkt);
+  /*
+  fprintf(stderr, "del : dans struct : \n");
+  struct node *current = reception->liste;
 
+  while(current != NULL)
+  {
+    fprintf(stderr, "->%d", pkt_get_seqnum(current->pkt));
+    current = current->next;
+  }
+  fprintf(stderr, "\n");
+*/
+
+
+
+  uint8_t seq = pkt_get_seqnum(pkt);
   struct node *ptr = reception->liste;
 
   //fprintf(stderr, "del 1\n");
@@ -174,8 +187,8 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
       // --------------------------------------------
 
       pkt_del(pkt);
-      //return -2; // chgmt
-      return -1;
+      return -2; // chgmt
+      //return -1;
     }
     pkt_set_seqnum(pkt, pkt_get_seqnum(pkt)+1);
 
@@ -346,11 +359,11 @@ int envoieDonnes( int sfd, FILE* f){
 
         int lu = read(sfd, buf, sizeof buf);
 
-        checkReceive(buf, lu, reception);
+        //checkReceive(buf, lu, reception);
 
-        //int err2 =  checkReceive(buf, lu, reception);
+        int err2 =  checkReceive(buf, lu, reception);
 
-        /*
+        
         if( err2 == -2)
         {
           struct node *temp = reception->liste;
@@ -371,7 +384,7 @@ int envoieDonnes( int sfd, FILE* f){
               fprintf(stderr, "Erreur lors de l'envoi\n");
             }
           }
-        }*/
+        }
         // ------------------------------------------------------------------------------------------------
 
 
