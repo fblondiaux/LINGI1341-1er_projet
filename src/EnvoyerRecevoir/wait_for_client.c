@@ -9,6 +9,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
 
 /* Block the caller until a message is received on sfd,
 * and connect the socket to the source addresse of the received message.

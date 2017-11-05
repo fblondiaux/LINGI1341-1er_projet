@@ -4,10 +4,10 @@
 #include "../FormatSegments/packet_interface.h"
 #include "receptionDonnes.h"
 /*
-* Receiver prends comme arguments :
-*
-*
-*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
 */
 
 int main(int argc, char *argv[]);

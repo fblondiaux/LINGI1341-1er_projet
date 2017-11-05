@@ -10,6 +10,13 @@
 #include <getopt.h>
 #include "receiver.h"
 
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
+
 int main(int argc, char * argv[]) {
   if(argc < 3){
     fprintf(stderr, "Pas assez d'arguments, donnez au minimum hostname et port.\n");

@@ -295,9 +295,9 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
 }
 
 /*
-* @pre sfd, file
+* @pre sfd, file pour orienter la lecture et l'ecriture des donnees au bon endroit.
 *
-*
+* @post Toutes les donnees ont ete recues et un ack de fin a ete envoye.
 *
 */
 void receptionDonnes(int sfd, int file){
@@ -316,9 +316,7 @@ void receptionDonnes(int sfd, int file){
   ufds[1].events = POLLOUT;
   while(end == 0 ){
 
-    //fprintf(stderr,"Poll attends un event\n");
     int rv = poll(ufds, 2, -1);
-    //fprintf(stderr,"UN evenement a eu lieu\n");
     if (rv == -1) {
       /*DEBUG*/ fprintf(stderr, "Error lors de l'utilisation de poll\n");
       return ;
@@ -328,24 +326,22 @@ void receptionDonnes(int sfd, int file){
       err = INGNORE;
       // traite la lecture
       if (ufds[0].revents & POLLIN) {
-        /*DEBUG*/ //fprintf(stderr, "il y a de quoi lire\n");
         memset((void*)payload, 0, 512); // make sure the struct is empty
         payloadSize = 512;
         int recu = read(sfd, buf, sizeof buf); // receive normal data
-        if(recu == 12){
-          fprintf(stderr, "C'EST LA FIN \n");
-        }
+        /*DEBUG*/if(recu == 12){
+        /* DEBUG*/   fprintf(stderr, "C'EST LA FIN \n");
+      /*debug*/ }
         err = traitementRecu(buf, recu, payload, &payloadSize, file);
       }
       if(err != INGNORE && ufds[1].revents & POLLOUT){
-        /*DEBUG*/ //fprintf(stderr, "Envoie d'un ack\n" );
         int sended = write(sfd,payload,payloadSize);
         if(sended != payloadSize){
-          fprintf(stderr, "Erreur lors de l'envoi de l'acquitement, on continue\n");
+          fprintf(stderr, "Erreur lors de l'envoi de l'ACK, on continue\n");
         }
       }
     }
 
   }
-  fprintf(stderr, "Moi j'ai fini bye, receiver\n" );
+  /*DEBUG*/ fprintf(stderr, "Moi j'ai fini bye, receiver\n" );
 }
