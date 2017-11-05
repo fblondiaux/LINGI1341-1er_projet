@@ -23,8 +23,6 @@ int main(int argc, char * argv[]) {
   while ((opt = getopt(argc, argv, "f:")) != -1) {
     switch (opt) {
         case 'f':
-          //FILE* temp = fopen(optarg, "w");
-          //if (temp == NULL){
           fileF = fopen(optarg, "w+");
           if(fileF == NULL){
             fprintf(stderr, " Echec lors de l'utilisation de fopen\n");
@@ -37,13 +35,12 @@ int main(int argc, char * argv[]) {
     }
   }
 
-  //QF: Les arguments arriveront tjs dans l'ordre hostname et puis port je suppose ?
-  // N : oui je crois
   // Récuperation des arguments non optionnels.
 
   char* host = argv[optind];
   int port = atoi(argv[optind + 1]);
   int file =0;
+
   if(fileF == NULL){
     file = STDIN_FILENO;
   }
@@ -68,8 +65,7 @@ int main(int argc, char * argv[]) {
     return EXIT_FAILURE;
   }
   if (wait_for_client(sfd) < 0){ /* Connected */
-    fprintf(stderr,
-      "Could not connect the socket after the first message.\n");
+    fprintf(stderr, "Could not connect the socket after the first message.\n");
       if(file != STDIN_FILENO){
         close(file);
       }
@@ -79,6 +75,7 @@ int main(int argc, char * argv[]) {
 
     receptionDonnes(sfd, file);
 
+    //Le transfert est terminé, fermeture.
     if(file != STDIN_FILENO){
       close(file);
     }

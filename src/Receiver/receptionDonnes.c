@@ -7,15 +7,27 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
 
 int seqnumMax = MAX_WINDOW_SIZE;
 int seqnumMin = 0;
 int window = MAX_WINDOW_SIZE;
-uint32_t lasttimestamp= 0;
-  int end = 0;
+uint32_t lasttimestamp= 0; //Necessaire pour l'envoie des Acks
+int end = 0;
 
+//Buffer pour stocker les données
 struct buffer* startBuffer = NULL;
 
+/*
+*@pre:
+*
+*@post: Imprime le contenu de la structure.
+*/
 void printStruct(){
   struct buffer* parcours = startBuffer;
   while(parcours != NULL){
@@ -25,6 +37,11 @@ void printStruct(){
   fprintf(stderr, "fin\n");
 }
 
+/*
+*@pre: Prends seqnum en argument.
+*
+*@post: retourne 0 si l'element n'est pas dans la structure, 1 si il y est déjà.
+*/
 int alreadyInStruct(int seqnum){
   struct buffer* parcours = startBuffer;
   while(parcours != NULL){
@@ -36,10 +53,15 @@ int alreadyInStruct(int seqnum){
   return 0;
 }
 
+/*
+*@pre str != NULL;
+*
+*@post l'element est inseré au bon endroit dans la structure. Si il y était déjà,
+* on ne change rien.
+*/
+
 void insertStruct(struct buffer* str){
 
-  //fprintf(stderr, "seqnumMin = %d\n", seqnumMin);
-  //fprintf(stderr, "seqnumMax = %d\n", seqnumMax);
   struct buffer* parcours = startBuffer;
   int seqnum = pkt_get_seqnum(str->data);
 
@@ -47,13 +69,12 @@ void insertStruct(struct buffer* str){
   if(alreadyInStruct(seqnum) == 1){
     return;
   }
-  window--; // N : chgmt
+  window--;
 
     /*DEBUG*/ fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
 
   // si rien dans le buffer
   if (parcours == NULL) {
-    //fprintf(stderr, "->%d\n",seqnum );
     startBuffer = str;
     startBuffer->next = NULL;
     return ;
@@ -61,35 +82,26 @@ void insertStruct(struct buffer* str){
 
 
   if (seqnumMin < seqnumMax){
+    //Element a inserer avant ce qui y etait deja.
     if(seqnum < parcours->seqnum){
-
       struct buffer *temp = parcours;
       startBuffer = str;
       str->next = temp;
-
-
-      //str->next = parcours;
-      //startBuffer = str;
       return;
     }
-    while(parcours->next != NULL && parcours->next->seqnum < seqnum){
-    /*DEBUG*/  //fprintf(stderr, "->%d",parcours->seqnum );
 
+    while(parcours->next != NULL && parcours->next->seqnum < seqnum){
       parcours=parcours->next;
     }
     str->next = parcours->next;
     parcours->next = str;
-    /*DEBUG*/   //fprintf(stderr, "->%d\n",seqnum );
     return;
   }
   else{
-    if(seqnum < 50){ // Seqnum est dans le début des numéros de sequence.
-      while(parcours->next != NULL && parcours->next->seqnum > 50){ // On passe tous les seqnums de 200 pour arriver avecc next
-
-          /*DEBUG*/   //fprintf(stderr, "->%d",parcours->seqnum );
+    if(seqnum < 50){ // Seqnum est dans le début des numéros de sequences.
+      while(parcours->next != NULL && parcours->next->seqnum > 50){ // On passe tous les seqnums de 2XX pour arriver avec next
         parcours=parcours->next;
       }
-
       //ON est a la fin
       if(parcours->next == NULL){
         parcours->next = str;
@@ -99,16 +111,11 @@ void insertStruct(struct buffer* str){
       }
       //il reste des numeros de sequences et ils sont entre 0 et 50.
       else{
-        //A verif
         while(parcours->next != NULL && parcours->next->seqnum < seqnum){
-
-            //fprintf(stderr, "->%d",parcours->seqnum );
           parcours=parcours->next;
         }
         str->next = parcours->next;
         parcours->next = str;
-
-        //fprintf(stderr, "->%d\n",seqnum );
         return;
       }
     }
@@ -120,37 +127,31 @@ void insertStruct(struct buffer* str){
         startBuffer = str;
         return;
       }
-
-
-      // N : chgmt
       while( parcours->next!= NULL && parcours->next->seqnum > 50 &&  seqnum > parcours->next->seqnum)
       {
         parcours = parcours->next;
       }
       str->next = parcours->next;
       parcours->next = str;
-
-      /*
-      while(parcours->next != NULL && parcours->next->seqnum > seqnum && parcours->next->seqnum > 50){
-
-          fprintf(stderr, "->%d",parcours->seqnum );
-        parcours=parcours->next;
-      }
-      str->next = parcours->next;
-      parcours->next = str; */
       return;
     }
 
   }
 }
 
-
+/*
+* @pre= buf : buffer recu dans le socket, taille: taille de buf, ACK le ack ou le nack à renvoyer
+* SizeACK: la taille de ce qu'il faut renvoyer, file: le file descriptor sur lequel on ecrit ce qui a été lu.
+*
+* @post retourne INGNORE si pas de ack ou de nack à envoyer, sinon retourne S_NACK OU S_ACK.
+*/
 selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, size_t* SizeACK, const int file){
   pkt_t* reception = pkt_new();
   pkt_status_code err = pkt_decode(buf, taille, reception);
 
+  //C'est le signal de fin, on quitte le programme.
   if(pkt_get_length(reception) == 0 && err != E_TR){
-    fprintf(stderr, "Receiver envoie le ack de fin\n");
+    /*DEBUG*/fprintf(stderr, "Receiver envoie le ack de fin\n");
     pkt_t* ack = pkt_new();
     pkt_set_type(ack, PTYPE_ACK);
     pkt_set_window(ack, window);
@@ -165,9 +166,10 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     end = 1;
     return S_ACK;
   }
+  //Reception d'une donnée tronquée, on envoie un nack.
   if (err == E_TR && pkt_get_type(reception) == 1){
     // On va devoir envoyer un NACK
-    fprintf(stderr, "Receiver doit renvoyer un nack\n"); // Preparation du NACK à envoyer.
+    /*DEBUG*/fprintf(stderr, "Receiver doit renvoyer un nack\n"); // Preparation du NACK à envoyer.
     pkt_t* ack = pkt_new(); // Préparation de la structure à encoder
     pkt_set_type(ack, 3);
     pkt_set_window(ack, window);
@@ -184,24 +186,23 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     pkt_del(reception);
     pkt_del(ack);
     return S_NACK;
-    // N : comment le nack est-il envoyé?
   }
   else if(err == PKT_OK){
-
     // On doit envoyer un ACK et écrire ce qu'il y avait dans le payload.
     int seqnum = pkt_get_seqnum(reception);
     if(seqnumMin < seqnumMax){
       if (seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
         lasttimestamp = pkt_get_timestamp(reception);
 
-        fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ack\n", seqnum );
+        /*DEBUG*/ fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ack\n", seqnum );
+        //Preparation de l'ack à envoyer
         pkt_t* ack = pkt_new();
         pkt_set_type(ack, 2);
         pkt_set_window(ack, window);
         pkt_set_seqnum(ack,seqnumMin);
         pkt_set_length(ack,0);
-        pkt_set_timestamp(ack, pkt_get_timestamp(reception)); // N : à la place de lasttimestamp
-        pkt_del(reception);                           // N : mis ici
+        pkt_set_timestamp(ack, pkt_get_timestamp(reception));
+        pkt_del(reception);
         if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
           pkt_del(ack);
           return INGNORE;
@@ -211,8 +212,8 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     }
     if(seqnumMax < seqnumMin){
       if (seqnum > seqnumMax && seqnum < seqnumMin){ // En dehors de ce que l'on peux recevoir.
+        //ON prepare egalement en ack.
         lasttimestamp = pkt_get_timestamp(reception);
-
         pkt_del(reception);
         fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ack\n", seqnum );
         pkt_t* ack = pkt_new();
@@ -228,72 +229,55 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
         return S_ACK;
       }
     }
-    // Creation et placement de la structure dans le buffer.
 
+    // Creation et placement de la structure dans le buffer.
     struct buffer* new = malloc(sizeof(struct buffer));
     new->seqnum = seqnum;
     new->data = reception;
-    //printStruct();
-    fprintf(stderr, "Resultat apres insertion\n");
+    /*DEBUG*/ fprintf(stderr, "Resultat apres insertion\n");
     insertStruct(new);
-    printStruct();
-    //fprintf(stderr, "debug1\n");
-    //window--;
-    fprintf(stderr, "window avant while : %d\n", window);
-    //Envoie du ack.
+    /*DEBUG*/ printStruct();
+    /*DEBUG*/fprintf(stderr, "window avant while : %d\n", window);
     struct buffer* current = startBuffer;
     char payloadTemp[512];
     int size = 0;
-    //fprintf(stderr, "debug2\n");
-    //while(current != NULL && current->seqnum == seqnumMin){
     while(startBuffer != NULL && startBuffer->seqnum == seqnumMin){
       // Decalage de la fenêtre
       seqnumMin = (seqnumMin +1) % 256;
       seqnumMax = (seqnumMax +1) % 256;
-      //fprintf(stderr, "Mes numeros de sequnums, mis à jours sont min %d, max %d\n", seqnumMin , seqnumMax );
-
-      //lasttimestamp = pkt_get_timestamp(current->data);
       lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
-      //fprintf(stderr, "debug2-1\n");
+      //Ecriture du contenu du payload dans le fichier ou sur la sortie standard
       size = pkt_get_length(current->data);
       memcpy( payloadTemp,pkt_get_payload(current->data), size);
       int ecrit = write(file, payloadTemp, size);
       if(ecrit!=size){
         fprintf(stderr, "Le segment à été reçu mais un problème à été rencontré lors de l'écriture de son payload\n");
       }
-      //fprintf(stderr, "debug2-2\n");
-      //current = current->next;
       startBuffer = startBuffer->next;
-      //current = startBuffer;
-      //fprintf(stderr, "debug2-3\n");
-      pkt_del(current->data);           // free qui pose problème
-      //fprintf(stderr, "debug2-4\n");
+      pkt_del(current->data);
       free(current);
-      //fprintf(stderr, "debug2-5\n");
       window ++; // ON a libere une place dans le buffer
-      fprintf(stderr, "window = %d\n", window);
+      /*DEBUG*/fprintf(stderr, "window = %d\n", window);
       current = startBuffer;
     }
-    //fprintf(stderr, "debug3\n");
+
+    //Preparation du ack a renvoyer.
     pkt_t* ack = pkt_new();
     pkt_set_type(ack, 2);
     pkt_set_window(ack, window);
     pkt_set_seqnum(ack,seqnumMin);
     pkt_set_length(ack,0);
     pkt_set_timestamp(ack,lasttimestamp);
-    //fprintf(stderr, "debug4\n");
     if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
       pkt_del(ack);
       return INGNORE;
     }
-    ///fprintf(stderr, "debug5\n");
-
     pkt_del(ack);
-    //fprintf(stderr, "debug6\n");
     return S_ACK;
 
   }
   else{
+    //Ce qu'on a recu n'est pas coherent, on renvoie un ack du prochain seqnum attendu
     pkt_del(reception);
     pkt_t* ack = pkt_new();
     pkt_set_type(ack, 2);
@@ -310,10 +294,14 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
   }
 }
 
-
+/*
+* @pre sfd, file
+*
+*
+*
+*/
 void receptionDonnes(int sfd, int file){
   // Preparation
-
 
   char buf[528];
   char payload[512];
