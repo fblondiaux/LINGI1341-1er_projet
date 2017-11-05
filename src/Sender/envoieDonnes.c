@@ -157,7 +157,7 @@ int checkReceive(const char* buf, const size_t len, struct head *reception)
 
   if( type == PTYPE_DATA || trFlag != 0)
   {
-    fprintf(stderr, "type de packet incohérent ou packet tronqué");
+    fprintf(stderr, "type de packet incohérent ou packet tronqué\n");
     return -1;; // ignore
   }
 
