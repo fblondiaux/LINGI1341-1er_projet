@@ -152,7 +152,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
   if(pkt_get_length(reception) == 0 && err != E_TR){
     fprintf(stderr, "Receiver envoie le ack de fin\n");
     pkt_t* ack = pkt_new();
-    pkt_set_type(ack, 2);
+    pkt_set_type(ack, PTYPE_ACK);
     pkt_set_window(ack, window);
     pkt_set_seqnum(ack,seqnumMin);
     pkt_set_length(ack,0);

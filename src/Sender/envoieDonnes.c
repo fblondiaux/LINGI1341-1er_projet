@@ -57,7 +57,7 @@ int add(pkt_t *pkt, struct head *buf)
 */
 int del(pkt_t *pkt, struct head *reception)
 {
-  
+
   fprintf(stderr, "del : dans struct : \n");
   struct node *current = reception->liste;
 
@@ -86,7 +86,7 @@ int del(pkt_t *pkt, struct head *reception)
   //fprintf(stderr, "pkt_get_seqnum(ptr->pkt) = %d\n",pkt_get_seqnum(ptr->pkt) );
   //fprintf(stderr, "seq = %d\n", seq);
   // a déjà été supprimé
-  
+
 
   // A ETE CHANGE !!!
   if(min < max )
@@ -374,7 +374,7 @@ int envoieDonnes( int sfd, FILE* f){
 
         int err2 =  checkReceive(buf, lu, reception);
 
-        
+
         if( err2 == -2)
         {
           struct node *temp = reception->liste;
@@ -425,8 +425,15 @@ int envoieDonnes( int sfd, FILE* f){
               // a recu le ack
               if (ufds[0].revents & POLLIN)
               {
-                end2 = 1;
-                fprintf(stderr, "end2=1\n");
+                if(checkReceive(buf,lu,reception) != 0){
+                  fprintf(stderr, "Ce n'est pas ce que j'attendais pour me fermer, j'attends un autre ack.\n");
+                  count ++;
+                }
+                else{
+
+                  end2 = 1;
+                  fprintf(stderr, "end2=1\n");
+                }
               }
 
               else if((uint32_t)time(NULL) > time_end+5)
