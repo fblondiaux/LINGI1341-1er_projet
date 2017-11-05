@@ -71,8 +71,6 @@ void insertStruct(struct buffer* str){
   }
   window--;
 
-    /*DEBUG*/ fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
-
   // si rien dans le buffer
   if (parcours == NULL) {
     startBuffer = str;
@@ -151,7 +149,6 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
 
   //C'est le signal de fin, on quitte le programme.
   if(pkt_get_length(reception) == 0 && err != E_TR){
-    /*DEBUG*/fprintf(stderr, "Receiver envoie le ack de fin\n");
     pkt_t* ack = pkt_new();
     pkt_set_type(ack, PTYPE_ACK);
     pkt_set_window(ack, window);
@@ -169,7 +166,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
   //Reception d'une donnée tronquée, on envoie un nack.
   if (err == E_TR && pkt_get_type(reception) == 1){
     // On va devoir envoyer un NACK
-    /*DEBUG*/fprintf(stderr, "Receiver doit renvoyer un nack\n"); // Preparation du NACK à envoyer.
+    // Preparation du NACK à envoyer.
     pkt_t* ack = pkt_new(); // Préparation de la structure à encoder
     pkt_set_type(ack, 3);
     pkt_set_window(ack, window);
@@ -193,8 +190,6 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     if(seqnumMin < seqnumMax){
       if (seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
         lasttimestamp = pkt_get_timestamp(reception);
-
-        /*DEBUG*/ fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ack\n", seqnum );
         //Preparation de l'ack à envoyer
         pkt_t* ack = pkt_new();
         pkt_set_type(ack, 2);
@@ -234,10 +229,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     struct buffer* new = malloc(sizeof(struct buffer));
     new->seqnum = seqnum;
     new->data = reception;
-    /*DEBUG*/ fprintf(stderr, "Resultat apres insertion\n");
     insertStruct(new);
-    /*DEBUG*/ printStruct();
-    /*DEBUG*/fprintf(stderr, "window avant while : %d\n", window);
     struct buffer* current = startBuffer;
     char payloadTemp[512];
     int size = 0;
@@ -257,7 +249,6 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
       pkt_del(current->data);
       free(current);
       window ++; // ON a libere une place dans le buffer
-      /*DEBUG*/fprintf(stderr, "window = %d\n", window);
       current = startBuffer;
     }
 
@@ -329,9 +320,6 @@ void receptionDonnes(int sfd, int file){
         memset((void*)payload, 0, 512); // make sure the struct is empty
         payloadSize = 512;
         int recu = read(sfd, buf, sizeof buf); // receive normal data
-        /*DEBUG*/if(recu == 12){
-        /* DEBUG*/   fprintf(stderr, "C'EST LA FIN \n");
-      /*debug*/ }
         err = traitementRecu(buf, recu, payload, &payloadSize, file);
       }
       if(err != INGNORE && ufds[1].revents & POLLOUT){
@@ -343,5 +331,4 @@ void receptionDonnes(int sfd, int file){
     }
 
   }
-  /*DEBUG*/ fprintf(stderr, "Moi j'ai fini bye, receiver\n" );
 }

@@ -78,7 +78,6 @@ int main(int argc, char *argv[]) {
   }
 
   close(sfd);
-  /* DEBUG */ fprintf(stderr, "fin sender: 4\n");
 
   return EXIT_SUCCESS;
 }

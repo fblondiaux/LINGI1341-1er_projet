@@ -89,8 +89,6 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt)
 	if(pkt_set_crc1(pkt,ntohl(pkt_get_crc1(pkt))) != PKT_OK){ // On met le crc1 en host byte order
 		return err;
 	}
-	/*DEBUG*/ fprintf(stderr, "decode : mis dans pkt: type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
-
 
 	if(crc32(crc,(Bytef*) data, 8 ) != pkt_get_crc1(pkt) )
 	{
@@ -152,9 +150,6 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 	{
 		return E_NOMEM;
 	}
-	fprintf(stderr, "encode : dans packet : type = %u, tr = %u, window = %u, seqnum = %u, length = %u, timestamp = %u\n", pkt_get_type(pkt), pkt_get_tr(pkt), pkt_get_window(pkt), pkt_get_seqnum(pkt), pkt_get_length(pkt), pkt_get_timestamp(pkt));
-
-
 
 	memcpy(buf, pkt, 2); // memcpy de wind, ty, type et seqnum
 	count = count+2;
