@@ -17,4 +17,14 @@ receiver : src/Receiver/receiver.c src/Receiver/receiver.h src/Receiver/receptio
 
 sender: src/Sender/sender.h src/Sender/sender.c src/Sender/envoieDonnes.h src/Sender/envoieDonnes.c  create_socket.o real_address.o wait_for_client.o packet_implem.o
 	gcc -o sender src/Sender/sender.h src/Sender/sender.c src/Sender/envoieDonnes.h src/Sender/envoieDonnes.c  create_socket.o real_address.o wait_for_client.o packet_implem.o -Wall -Werror -Wshadow -g -lz
-clear : rm sender receiver wait_for_client.o real_address.o packet_implem.o create_socket.o
+clear : CLEAR
+		rm *.o
+
+tests: tests/testSP512.sh tests/testSP15000.sh tests/test0SP15000.sh tests/testAP512.sh tests/testAP15000.sh tests/test0AP15000.sh FORCE
+	 ./tests/testSP512.sh
+	 ./tests/testSP15000.sh
+	 ./tests/test0SP15000.sh
+	 ./tests/testAP512.sh
+	 ./tests/testAP15000.sh
+	 ./tests/test0AP15000.sh
+FORCE:
