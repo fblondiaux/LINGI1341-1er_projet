@@ -92,9 +92,11 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *b
 
 
 /*
-* Specification de la méthode
-* @addr =
-* @sfd =
-* @file =
+* Lis dans un fichier les donnees a envoyer, les envoie au receiver et 
+* recoit et gere les acks/nacks envoyes par le receiver
+*
+* @sfd : un file descriptor 
+* @f : pointeur FILE
+* @return : 0 succes, -1 erreur
 */
 int envoieDonnes(int sfd, FILE* file);
