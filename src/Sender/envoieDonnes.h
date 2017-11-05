@@ -1,5 +1,10 @@
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
 #include "../FormatSegments/packet_interface.h"
-
 #include <sys/poll.h>
 #include <stdlib.h>
 #include <stdio.h>

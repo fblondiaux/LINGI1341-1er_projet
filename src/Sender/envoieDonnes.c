@@ -1,5 +1,11 @@
-#include "envoieDonnes.h"
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
 
+#include "envoieDonnes.h"
 #include <sys/poll.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,7 +17,6 @@
 #include <time.h>
 #include <netinet/in.h> /* * sockaddr_in6 */
 #include <sys/types.h>
-
 
 static int min = 0;
 static int max = MAX_WINDOW_SIZE;
@@ -303,13 +308,21 @@ int prepareToSend(char* payload, int taillePayload, char* toSend, struct head *r
   return length;
 }
 
+
+/*
+* Lis dans un fichier les donnees a envoyer, les envoie au receiver et 
+* recoit et gere les acks/nacks envoyes par le receiver
+*
+* @sfd : un file descriptor 
+* @f : pointeur FILE
+* @return : 0 succes, -1 erreur
+*/
 int envoieDonnes( int sfd, FILE* f){
   int filetemp;
   if(f == NULL){
     filetemp = STDIN_FILENO;
   }
   else {
-
     filetemp = fileno(f);
     /* DEBUG */ fprintf(stderr, "file desc a comme valeur au tout debut %d\n", filetemp);
   }
@@ -319,15 +332,15 @@ int envoieDonnes( int sfd, FILE* f){
   int end = 0;
   struct pollfd ufds[2];
   ufds[0].fd = sfd;
-  ufds[0].events = POLLIN; // check for normal data
+  ufds[0].events = POLLIN; 
   ufds[1].fd = file;
-  ufds[1].events = POLLIN; // check for normal data
+  ufds[1].events = POLLIN; 
   int attendre = 0;
 
   // initialisation d'un buffer vide.
   struct head *reception = (struct head *)malloc(sizeof(struct head));
   if(reception==NULL)
-    return -1; // a changer?
+    return -1; 
   reception->liste = NULL;
   struct node *ptr = reception->liste; /* changé */
 
@@ -347,23 +360,16 @@ int envoieDonnes( int sfd, FILE* f){
       memset((void*)buf, 0, 528); // make sure the struct is empty
       // traite la lecture
       if (ufds[0].revents & POLLIN) {
-        //printf("Sender : il y a de quoi lire !\n");
-
         int lu = read(sfd, buf, sizeof buf);
-
-        //checkReceive(buf, lu, reception);
-
         int err2 =  checkReceive(buf, lu, reception);
-
-
+        // un ack concernant ce paquet a deja ete recu --> renvoi du paquet qui a ete perdu
         if( err2 == -2)
         {
           struct node *temp = reception->liste;
-          pkt_set_timestamp(temp->pkt, (uint32_t)time(NULL)); // err = ... ?
+          pkt_set_timestamp(temp->pkt, (uint32_t)time(NULL)); 
           char buf2[528];
-
           int longueur = 528;
-          // length-POST : nombre d'octets ecrits dans toSend
+          // longueur-post : nombre d'octets ecrits dans buf2
           err2 = pkt_encode(temp->pkt, buf2, (size_t*) &longueur);
           if(longueur == 0)
           {
@@ -377,30 +383,22 @@ int envoieDonnes( int sfd, FILE* f){
             }
           }
         }
-        // ------------------------------------------------------------------------------------------------
 
-
-
-        // tous les éléments du fichier ont été envoyés et tous les ack ont été reçus
+        // tous les éléments du fichier ont été envoyés et des ack concernant tous les paquets ont ete recus
         if(reception->liste == NULL && attendre ==1)
         {
-          fprintf(stderr, "sender : tous les elems du fichiers ont été envoyés, tous les acks ont été reçus\n");
-          //fprintf(stderr, "Sender : Je vais envoyer un packet vide\n");
+          /* DEBUG */ fprintf(stderr, "sender : tous les elems du fichiers ont été envoyés, tous les acks ont été reçus\n");
             int nombre = prepareToSend(NULL, 0, buf, reception);
             if(nombre == 0) {
               fprintf(stderr, "erreur de prepareToSend\n");
             }
-            //fprintf(stderr, "nombre = %d\n", nombre);
-            uint32_t time_end = (uint32_t)time(NULL);       // DEBUG
+            uint32_t time_end = (uint32_t)time(NULL);    
             int sended = write(sfd, buf, nombre);
             if(sended != nombre){
               fprintf(stderr, "Erreur lors de l'envoi\n");
             }
-
-            // DEBUG ------------------------
             int end2 = 0;
             int count = 0;
-
             while( end2 == 0 && count < 5)
             {
               // a recu le ack
@@ -408,16 +406,14 @@ int envoieDonnes( int sfd, FILE* f){
               {
                 if(checkReceive(buf,lu,reception) != 0){
                   memset((void*)buf, 0, 528);
-                  fprintf(stderr, "Ce n'est pas ce que j'attendais pour me fermer, j'attends un autre ack.\n");
+                  /* DEBUG */ fprintf(stderr, "Ce n'est pas ce que j'attendais pour me fermer, j'attends un autre ack.\n");
                   count ++;
                 }
                 else{
-
                   end2 = 1;
-                  fprintf(stderr, "end2=1\n");
+                  /* DEBUG */ fprintf(stderr, "end2=1\n");
                 }
               }
-
               else if((uint32_t)time(NULL) > time_end+5)
               {
                 time_end = (uint32_t)time(NULL);
@@ -428,26 +424,18 @@ int envoieDonnes( int sfd, FILE* f){
                 count++;
               }
             }
-
-            // FIN DEBUG ------------------------------------
-
             end = 1;
-            fprintf(stderr, "err = 1\n");
+            /* DEBUG */ fprintf(stderr, "end = 1\n");
         }
       }
 
-      // y a-t-il des timeout?
-      ptr = reception->liste;  /* changé */
-      //fprintf(stderr, "ici\n");
+      // renvoyer les paquets lorsque time-out
+      ptr = reception->liste;  
       while(ptr!=NULL)
       {
-        //fprintf(stderr, "(pkt_get_timestamp(ptr->pkt)+5)=  %d\n", (pkt_get_timestamp(ptr->pkt)+5));
-        //fprintf(stderr, "((uint32_t)time(NULL)=  %d\n", ((uint32_t)time(NULL)));
-
-
-        if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+4)) // chmt
+        if( (uint32_t)time(NULL) > (pkt_get_timestamp(ptr->pkt)+5)) 
         {
-          fprintf(stderr, "timeout du packet de seq : %d --> on réenvoie les données\n", pkt_get_seqnum(ptr->pkt));
+          /* DEBUG */ fprintf(stderr, "timeout du packet de seq : %d --> on réenvoie les données\n", pkt_get_seqnum(ptr->pkt));
           pkt_status_code err = pkt_set_timestamp(ptr->pkt, (uint32_t)time(NULL));
           if( err == PKT_OK)
           {
@@ -459,33 +447,22 @@ int envoieDonnes( int sfd, FILE* f){
               if(sended != t){
                 fprintf(stderr, "Erreur lors de l'envoi\n");
               }
-              //fprintf(stderr, "sender a renvoyé le packet dont seqnum = %d\n", pkt_get_seqnum(ptr->pkt));
             }
           }
         }
         ptr = ptr->next;
       }
 
-      // traite l'ecriture
-      //fprintf(stderr, "cond1 : %d\n", ufds[1].revents & POLLIN);
-      //fprintf(stderr, "cond2 : %d\n", (window_dest > 0));
-      //fprintf(stderr, "cond3 : %d\n",(window > 0) );
-      //fprintf(stderr, "cond4 : %d\n", (attendre == 0));
       if(ufds[1].revents & POLLIN && window_dest > 0 && window > 0 && attendre == 0)  {
         memset((void*)payload, 0, 512); // make sure the struct is empty
 
-        // lu : nombre de bytes qui ont été lues dans file
-
-        //fprintf(stderr, "sender : avant read fichier\n");
         fprintf(stderr, "file = %d\n", file);
         int lu = read(file,payload, 512);
-        //fprintf(stderr, "sender : après read fichier\n");
         if(lu == 0)
         {
-          fprintf(stderr, "J'ai vu que lu == 0\n");
+          /* DEBUG */ fprintf(stderr, "J'ai vu que lu == 0\n");
           attendre = 1;
 
-          // on ne passe jamais dans cette boucle??
           if(reception->liste == NULL){
             fprintf(stderr, "Sender : Je vais envoyer un packet vide\n");
             int nombre = prepareToSend(NULL, 0, buf, reception);
@@ -493,7 +470,6 @@ int envoieDonnes( int sfd, FILE* f){
             {
               fprintf(stderr, "erreur de prepareToSend\n");
             }
-            //fprintf(stderr, "nombre = %d\n", nombre);
             int sended = write(sfd, buf, nombre);
             if(sended != nombre){
               fprintf(stderr, "Erreur lors de l'envoi\n");
@@ -501,8 +477,6 @@ int envoieDonnes( int sfd, FILE* f){
             end = 1;
             fprintf(stderr, "err = 1\n");
           }
-
-
         }
         else
         {
@@ -524,13 +498,6 @@ int envoieDonnes( int sfd, FILE* f){
         }
       }
     }
-    // if(f == NULL){
-    //   end = feof(stdin);
-    // }
-    // else{
-
-    //   end = feof(f);
-    // }
   }
   free(reception);
   return 0;

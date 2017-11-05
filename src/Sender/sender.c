@@ -1,10 +1,10 @@
-// #include "../EnvoyerRecevoir/real_address.h"
-// #include "../EnvoyerRecevoir/create_socket.h"
-// #include "../EnvoyerRecevoir/wait_for_client.h"
-// #include "../FormatSegments/packet_interface.h"
-// #include "envoieDonnes.h"
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
 #include "sender.h"
-
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +48,6 @@ int main(int argc, char *argv[]) {
   // N : oui je crois
   // Récuperation des arguments non optionnels.
 
-  printf("sender : 1\n");
   char* host = argv[optind];
   int port = atoi(argv[optind + 1]);
 
@@ -63,7 +62,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  printf("sender : 2\n");
   // Création du socket.
   int sfd = create_socket(NULL, -1, &addr, port);
   if(sfd == -1){
@@ -71,15 +69,16 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  printf("sender : 3\n");
+
   envoieDonnes(sfd, file);
 
-  printf("sender : 4\n");
+
   if(file != NULL){
     fclose(file);
   }
 
   close(sfd);
+  /* DEBUG */ fprintf(stderr, "fin sender: 4\n");
 
   return EXIT_SUCCESS;
 }
