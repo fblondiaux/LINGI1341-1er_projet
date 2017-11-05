@@ -12,6 +12,7 @@ int seqnumMax = MAX_WINDOW_SIZE;
 int seqnumMin = 0;
 int window = MAX_WINDOW_SIZE;
 uint32_t lasttimestamp= 0;
+  int end = 0;
 
 struct buffer* startBuffer = NULL;
 
@@ -49,7 +50,7 @@ void insertStruct(struct buffer* str){
   window--; // N : chgmt
 
     /*DEBUG*/ fprintf(stderr,"Receiver stocke le seqnum %d dans son buf\n",seqnum);
-  
+
   // si rien dans le buffer
   if (parcours == NULL) {
     //fprintf(stderr, "->%d\n",seqnum );
@@ -114,7 +115,7 @@ void insertStruct(struct buffer* str){
 
     else{ // seqnum > 50
       // L'element a inserer est plus petit que le reste de la structure.
-      if(seqnum < parcours->seqnum && parcours->seqnum > 50 ){
+      if((seqnum < parcours->seqnum && parcours->seqnum > 50 ) || parcours->seqnum < 50){
         str->next = parcours;
         startBuffer = str;
         return;
@@ -136,9 +137,7 @@ void insertStruct(struct buffer* str){
         parcours=parcours->next;
       }
       str->next = parcours->next;
-      parcours->next = str; */ 
-
-      fprintf(stderr, "->%d\n",seqnum );
+      parcours->next = str; */
       return;
     }
 
@@ -150,6 +149,22 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
   pkt_t* reception = pkt_new();
   pkt_status_code err = pkt_decode(buf, taille, reception);
 
+  if(pkt_get_length(reception) == 0 && err != E_TR){
+    fprintf(stderr, "Receiver envoie le ack de fin\n");
+    pkt_t* ack = pkt_new();
+    pkt_set_type(ack, 2);
+    pkt_set_window(ack, window);
+    pkt_set_seqnum(ack,seqnumMin);
+    pkt_set_length(ack,0);
+    pkt_set_timestamp(ack, pkt_get_timestamp(reception));
+    pkt_del(reception);
+    if(pkt_encode(ack,ACK, (size_t*) SizeACK) != PKT_OK){
+      pkt_del(ack);
+      return INGNORE;
+    }
+    end = 1;
+    return S_ACK;
+  }
   if (err == E_TR && pkt_get_type(reception) == 1){
     // On va devoir envoyer un NACK
     fprintf(stderr, "Receiver doit renvoyer un nack\n"); // Preparation du NACK à envoyer.
@@ -178,7 +193,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
     if(seqnumMin < seqnumMax){
       if (seqnum < seqnumMin || seqnum > seqnumMax){ // En dehors de ce que l'on peux recevoir.
         lasttimestamp = pkt_get_timestamp(reception);
-        
+
         fprintf(stderr, "Receiver a déja reçu le sequnum %d, il l'ignore mais envoie quand meme un ack\n", seqnum );
         pkt_t* ack = pkt_new();
         pkt_set_type(ack, 2);
@@ -236,7 +251,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
       seqnumMin = (seqnumMin +1) % 256;
       seqnumMax = (seqnumMax +1) % 256;
       //fprintf(stderr, "Mes numeros de sequnums, mis à jours sont min %d, max %d\n", seqnumMin , seqnumMax );
-      
+
       //lasttimestamp = pkt_get_timestamp(current->data);
       lasttimestamp = pkt_get_timestamp(startBuffer->data); // ON en a besoin pour la suite
       //fprintf(stderr, "debug2-1\n");
@@ -253,7 +268,7 @@ selectiveRepeat_status_code traitementRecu(char* buf, int taille, char* ACK, siz
       //fprintf(stderr, "debug2-3\n");
       pkt_del(current->data);           // free qui pose problème
       //fprintf(stderr, "debug2-4\n");
-      free(current);        
+      free(current);
       //fprintf(stderr, "debug2-5\n");
       window ++; // ON a libere une place dans le buffer
       fprintf(stderr, "window = %d\n", window);
@@ -305,7 +320,7 @@ void receptionDonnes(int sfd, int file){
   size_t payloadSize = 512;
   selectiveRepeat_status_code err= 0;
 
-  int end = 0;
+
   struct pollfd ufds[2];
   ufds[0].fd = sfd;
   ufds[0].events = POLLIN; // check for normal data
@@ -329,13 +344,10 @@ void receptionDonnes(int sfd, int file){
         memset((void*)payload, 0, 512); // make sure the struct is empty
         payloadSize = 512;
         int recu = read(sfd, buf, sizeof buf); // receive normal data
-        if(recu == 12){ //faire un truc + propre
-          /*DEBUG*/fprintf(stderr, "J'ai reçu le dernier packet, 0\n");
-          end = 1;
+        if(recu == 12){
+          fprintf(stderr, "C'EST LA FIN \n");
         }
-        else{
-          err = traitementRecu(buf, recu, payload, &payloadSize, file);
-        }
+        err = traitementRecu(buf, recu, payload, &payloadSize, file);
       }
       if(err != INGNORE && ufds[1].revents & POLLOUT){
         /*DEBUG*/ //fprintf(stderr, "Envoie d'un ack\n" );
@@ -347,4 +359,5 @@ void receptionDonnes(int sfd, int file){
     }
 
   }
+  fprintf(stderr, "Moi j'ai fini bye, receiver\n" );
 }
