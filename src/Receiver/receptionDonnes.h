@@ -5,6 +5,13 @@
 /* Taille maximale de Window */
 #define MAX_WINDOW_SIZE 31
 
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
+
 typedef enum {
   INGNORE = 0,     /* A ete ignore */
   S_ACK,           /* Necessite l'envoye d'un ack*/

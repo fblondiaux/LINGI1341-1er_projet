@@ -6,7 +6,12 @@
 #include <string.h>
 #include "real_address.h"
 // Ce code est inspire de la resource https://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
-
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
 /* Resolve the resource name to an usable IPv6 address
 * @address: The name to resolve
 * @rval: Where the resulting IPv6 address descriptor should be stored

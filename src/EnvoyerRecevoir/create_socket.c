@@ -6,6 +6,13 @@
 #include <fcntl.h>
 #include <string.h> // pour strerror()
 
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
+
 /* Creates a socket and initialize it
  * @source_addr: if !NULL, the source address that should be bound to this socket
  * @src_port: if >0, the port on which the socket is listening
@@ -19,27 +26,19 @@ int create_socket(struct sockaddr_in6 *source_addr, int src_port,
 
 
 	int err = 0;
-	int sock = socket(AF_INET6, SOCK_DGRAM, 0); /* j'ai mis protocol = 0 car
-	normalement il n'existe qu'un protocol par type de socket et maille de protocole donnés.
-	(source :  http://man7.org/linux/man-pages/man2/socket.2.html) ...
-	mais c'est sans doute pas obligatoire */
+	int sock = socket(AF_INET6, SOCK_DGRAM, 0);
 
 	if (sock == -1)
 	{
-		fprintf(stderr, "%s\n", strerror(errno)); // peut-être plus précis d'utiliser errno ? (comme il est quand même mis à jour par socket())
+		fprintf(stderr, "%s\n", strerror(errno));
 		return -1;
 	}
 
 
 
-	/* question : est-ce possible qu'il faille spécifier
-	adresse et port pour envoyer données (source) ET
-	adresse et port sur lequel envoyer données (destination)? */
-
-
 	if(source_addr != NULL)
 	{
-		source_addr->sin6_port = htons(src_port); // question (peut-être un peu bête): comment on sait qu'il faut convertir de host à networck byte order?
+		source_addr->sin6_port = htons(src_port);
 		err = bind(sock, (const struct sockaddr *) source_addr, sizeof(struct sockaddr_in6));
 		if(err !=0)
 		{

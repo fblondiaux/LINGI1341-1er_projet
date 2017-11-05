@@ -1,6 +1,13 @@
 #ifndef __WAIT_FOR_CLIENT_H_
 #define __WAIT_FOR_CLIENT_H_
 
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
+
 /* Block the caller until a message is received on sfd,
  * and connect the socket to the source addresse of the received message.
  * @sfd: a file descriptor to a bound socket but not yet connected

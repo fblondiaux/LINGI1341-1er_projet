@@ -1,6 +1,12 @@
 #ifndef __PACKET_INTERFACE_H_
 #define __PACKET_INTERFACE_H_
 
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
 #include <stddef.h> /* size_t */
 #include <stdint.h> /* uintx_t */
 

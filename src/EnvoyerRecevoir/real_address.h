@@ -7,6 +7,12 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+/*
+* Code réalisé par :
+* Noemie verstraete - 25021500
+* Florence Blondiaux - 06521500
+* Version du 05.11.17
+*/
 
 /* Resolve the resource name to an usable IPv6 address
 * @address: The name to resolve
